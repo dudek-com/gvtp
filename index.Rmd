@@ -1,0 +1,150 @@
+---
+title: "GVTP"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T, warning = F, message = F)
+```
+
+## Skim
+
+```{r}
+# load libraries ----
+if (!require(librarian)){
+  install.packages(librarian)
+  library(librarian)
+}
+# load libraries, install if missing
+shelf(
+  # reporting
+  DT, htmltools,
+  # sdm
+  corrplot, sdm,
+  # tidyverse
+  dplyr, readr, readxl, tidyr,
+  # utilities
+  glue, here, skimr)
+sdm::installAll()
+select = dplyr::select
+
+# variables ----
+d_xls <- here("data/gvtp_hab_char_data_compiled_Final.xls")
+# excel_sheets(d_xls)
+
+plot   <- read_excel(d_xls, "Plot")
+spp    <- read_excel(d_xls, "Species")
+soil   <- read_excel(d_xls, "Soil Layers")
+veg    <- read_excel(d_xls, "Veg")
+herbht <- read_excel(d_xls, "Herb Height")
+gvtpht <- read_excel(d_xls, "GVTP Height Heads")
+rdm    <- read_excel(d_xls, "RDM")
+
+h3("plot")
+skim(plot)
+h3("spp")
+skim(spp)
+h3("soil")
+skim(soil)
+h3("veg")
+skim(veg)
+h3("herbht")
+skim(herbht)
+h3("gvtpht")
+skim(gvtpht)
+h3("rdm")
+skim(rdm)
+```
+
+
+## SDM
+
+### Prep predictors
+
+```{r}
+d <- plot %>% 
+  filter(!is.na(gvtp_count)) %>% 
+  mutate(
+    gvtp = as.integer(!gvtp_count == "0")) %>% 
+  select_if(is.numeric)
+
+predictors <- setdiff(names(d), "gvtp") %>% sort()
+
+d <- d %>% 
+  select(gvtp, all_of(predictors))
+
+# abbreviate names
+d_cols_abbr <- abbreviate(names(d), minlength=4)
+names(d) <- d_cols_abbr
+tibble(
+  column_original = names(d_cols_abbr),
+  column_abbreviated = d_cols_abbr) %>% 
+  datatable()
+
+datatable(d)
+```
+
+### Correlation among predictors
+
+* [Introduction to SDMs: data preparation and simple model fitting](https://damariszurell.github.io/HU-GCIB/3_SDM_intro.html)
+
+```{r}
+# We first estimate a correlation matrix from the predictors. We use Spearman rank correlation coefficient, as we do not know whether all variables are normally distributed.
+cor_mat <- cor(d[,-1], method='spearman')
+
+# We can visualise this correlation matrix. For better visibility, we plot the correlation coefficients as percentages.
+corrplot.mixed(cor_mat, tl.pos='lt', tl.cex=0.5, number.cex=0.4, addCoefasPercent=T)
+```
+
+### Fit models
+
+* [sdm](http://www.biogeoinformatics.org/)
+
+```{r}
+d_sdm <- sdmData(gvtp ~ ., train = as.data.frame(d))
+d_sdm
+
+m1 <- sdm(
+  gvtp ~ ., data = d_sdm, 
+  methods = c("glm", "gam", "brt"))
+m1
+
+m2 <- sdm(
+  gvtp ~ .,data = d_sdm,
+  methods = c("rf", "tree", "fda", "mars", "svm"),
+  replication = "sub", test.percent = 30, n = 2)
+
+m2
+getModelInfo(m2)
+
+roc(m2)
+
+roc(m2,smooth=T)
+```
+
+### Importance of predictors
+
+```{r}
+# gui(m2)
+
+vi <- getVarImp(m2, id = 1, wtest = "training")
+
+plot(vi,'cor')
+
+vi@varImportance %>% 
+  arrange(desc(corTest)) %>% 
+  datatable()
+```
+
+
+## References
+
+[Zotero group: dudek-gvtp](https://www.zotero.org/groups/2587262/dudek-gvtp/library)
+
