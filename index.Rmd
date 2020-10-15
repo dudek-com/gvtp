@@ -31,14 +31,17 @@ shelf(
   # tidyverse
   dplyr, readr, readxl, tidyr,
   # utilities
-  glue, here, skimr)
-sdm::installAll()
+  fs, glue, here, skimr)
+# sdm::installAll()
 select = dplyr::select
 
-# variables ----
-d_xls <- here("data/gvtp_hab_char_data_compiled_Final.xls")
+# paths & variables ----
+dir_gdrive <- case_when(
+  Sys.info()[['user']] == "bbest" ~ "/Volumes/GoogleDrive/My Drive/projects/dudek")
+d_xls <- path(dir_gdrive, "data/gvtp_hab_char_data_compiled_Final.xls")
 # excel_sheets(d_xls)
 
+# read sheets of data
 plot   <- read_excel(d_xls, "Plot")
 spp    <- read_excel(d_xls, "Species")
 soil   <- read_excel(d_xls, "Soil Layers")
@@ -47,6 +50,7 @@ herbht <- read_excel(d_xls, "Herb Height")
 gvtpht <- read_excel(d_xls, "GVTP Height Heads")
 rdm    <- read_excel(d_xls, "RDM")
 
+# skim sheets
 h3("plot")
 skim(plot)
 h3("spp")
@@ -63,8 +67,9 @@ h3("rdm")
 skim(rdm)
 ```
 
-
 ## SDM
+
+Species distribution modeling...
 
 ### Prep predictors
 
