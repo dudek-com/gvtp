@@ -6,6 +6,7 @@ output:
     toc_depth: 3
     toc_float: true
     code_folding: hide
+    self_contained: false
 editor_options: 
   chunk_output_type: console
 ---
@@ -38,7 +39,8 @@ select = dplyr::select
 # paths & variables ----
 dir_gdrive <- case_when(
   Sys.info()[['user']] == "bbest" ~ "/Volumes/GoogleDrive/My Drive/projects/dudek")
-d_xls <- path(dir_gdrive, "data/gvtp_hab_char_data_compiled_Final.xls")
+d_xls    <- path(dir_gdrive, "data/gvtp_hab_char_data_compiled_Final.xls")
+cols_xls <- path(dir_gdrive, "data/gvtp_hab_char_columns.xlsx")
 # excel_sheets(d_xls)
 
 # read sheets of data
@@ -88,10 +90,11 @@ d <- d %>%
 # abbreviate names
 d_cols_abbr <- abbreviate(names(d), minlength=4)
 names(d) <- d_cols_abbr
-tibble(
+d_cols <- tibble(
   column_original = names(d_cols_abbr),
-  column_abbreviated = d_cols_abbr) %>% 
-  datatable()
+  column_abbreviated = d_cols_abbr)
+write_csv(d_cols, cols_xls)
+datatable(d_cols)
 
 datatable(d)
 ```
