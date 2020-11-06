@@ -28,7 +28,7 @@ shelf(
   # reporting
   DT, htmltools,
   # sdm
-  corrplot, sdm,
+  corrplot, dismo, sdm,
   # tidyverse
   dplyr, readr, readxl, tidyr,
   # utilities
@@ -151,6 +151,31 @@ vi@varImportance %>%
   datatable()
 ```
 
+### gam
+
+```{r}
+group      <- kfold(d, 5)
+pres_train <- d[group != 1, ]
+pres_test  <- d[group == 1, ]
+
+maxent()
+## Loading required namespace: rJava
+## This is MaxEnt version 3.4.1
+xm <- maxent(predictors, pres_train, factors='biome')
+plot(xm)
+
+```
+
+
+## Next Steps
+
+- subset of variables based on 1 per group in [gvtp_hab_char_columns.xlsx - Google Sheets](https://docs.google.com/spreadsheets/d/1LUjoRMollGuouUyfQeoAPbYC6Hl6i7kT/edit#gid=1414489956)
+- want term plots:
+  - gam
+  - [R: Maxent](http://finzi.psych.upenn.edu/R/library/dismo/html/maxent.html)
+- [Species distribution modeling — R Spatial](https://rspatial.org/raster/sdm/index.html)
+- [6 Available Models | The caret Package](http://topepo.github.io/caret/available-models.html)
+- [Lab 6. Species](http://benbestphd.com/landscape-ecology-labs/lab6.html)
 
 ## References
 
