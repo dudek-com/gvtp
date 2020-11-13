@@ -6,6 +6,7 @@ output:
     toc_depth: 3
     toc_float: true
     code_folding: hide
+    lib_dir: index_libs
     self_contained: false
 editor_options: 
   chunk_output_type: console
@@ -25,15 +26,17 @@ if (!require(librarian)){
 }
 # load libraries, install if missing
 shelf(
-  # reporting
-  DT, htmltools,
+  # tables
+  DT,
+  # plots
+  kassambara/easyGgplot2, ggplot2, trelliscopejs, gapminder,
   # sdm
-  corrplot, dismo, sdm,
-  # tidyverse
-  dplyr, readr, readxl, tidyr,
+  corrplot, dismo, mgcv, randomForest, sdm,
+  # data wrangling
+  dplyr, purrr, readr, readxl, tidyr,
   # utilities
-  fs, glue, here, skimr)
-# sdm::installAll()
+  fs, glue, here, htmltools, skimr)
+# sdm::installAll() # run once
 select = dplyr::select
 
 # paths & variables ----
@@ -51,7 +54,9 @@ veg    <- read_excel(d_xls, "Veg")
 herbht <- read_excel(d_xls, "Herb Height")
 gvtpht <- read_excel(d_xls, "GVTP Height Heads")
 rdm    <- read_excel(d_xls, "RDM")
+```
 
+```{r, eval = F}
 # skim sheets
 h3("plot")
 skim(plot)
@@ -69,11 +74,9 @@ h3("rdm")
 skim(rdm)
 ```
 
-## SDM
+## Predictors prep
 
-Species distribution modeling...
-
-### Prep predictors
+### Plot
 
 ```{r}
 d <- plot %>% 
@@ -82,7 +85,7 @@ d <- plot %>%
     gvtp = as.integer(!gvtp_count == "0")) %>% 
   select_if(is.numeric)
 
-predictors <- setdiff(names(d), "gvtp") %>% sort()
+predictors <- setdiff(names(d), c("plot", "gvtp")) %>% sort()
 
 d <- d %>% 
   select(gvtp, all_of(predictors))
@@ -97,6 +100,43 @@ write_csv(d_cols, cols_xls)
 datatable(d_cols)
 
 datatable(d)
+
+d_long <- d %>% 
+  pivot_longer(-gvtp, "variable") %>%
+  #filter(variable %in% (unique(.$variable) %>% head(5))) %>% 
+  mutate(
+    gvtp = as.factor(gvtp)) %>% 
+  arrange(variable, gvtp, value)
+  
+d_gvtp_avg <- d_long %>% 
+  group_by(variable, gvtp) %>% 
+  summarize(
+    avg     = mean(value, na.rm=T), 
+    sd      = sd(value, na.rm=T),
+    .groups="drop")
+
+d_gvtp_ttest <- d_long %>% 
+  #filter(variable %in% (unique(.$variable) %>% head(5))) %>% 
+  group_by(variable) %>% 
+  summarize(
+    t_test = oneway.test(value ~ gvtp, var.equal = T)$p.value) %>% 
+  arrange(t_test) #  View(d_gvtp_ttest)
+datatable(d_gvtp_ttest)
+
+ggplot(d_long, aes(x=value, fill=gvtp, color=gvtp)) +
+  #facet_wrap(facets = vars(variable)) +
+  geom_density(alpha=0.2) +
+  geom_histogram(
+    aes(y=..density..), position="identity", alpha=0.5) +
+  # facet_trelliscope() not working w/ other data, eg geom_vline(avg)
+  #   https://github.com/hafen/trelliscopejs/issues/74
+  # geom_vline(
+  #   data = d_avg,
+  #   aes(xintercept=avg, color=gvtp),
+  #   linetype="dashed") +
+  facet_trelliscope(
+    ~variable, scales = "free",
+    path = "index_libs/trelli_predictors")
 ```
 
 ### Correlation among predictors
@@ -109,6 +149,87 @@ cor_mat <- cor(d[,-1], method='spearman')
 
 # We can visualise this correlation matrix. For better visibility, we plot the correlation coefficients as percentages.
 corrplot.mixed(cor_mat, tl.pos='lt', tl.cex=0.5, number.cex=0.4, addCoefasPercent=T)
+```
+
+## SDM
+
+Species distribution modeling...
+
+### Maxent
+
+* [Maxent -- Modeling methods | R Spatial](https://rspatial.org/raster/sdm/6_sdm_methods.html#maxent)
+
+```{r}
+# downloaded http://www.cs.princeton.edu/~schapire/maxent
+#   and placed into system.file("java", package="dismo")
+# maxent() # MaxEnt version 3.4.3 
+
+predictors_ttest <- d_gvtp_ttest %>% 
+  filter(t_test < 0.05) %>% 
+  pull(variable)
+
+d_a <- d %>% 
+  select(gvtp, all_of(predictors_ttest))
+
+set.seed(0)
+i_k        <- kfold(d_a, 5)
+d_a_train <- d_a[i_k != 1, ]
+d_a_test  <- d_a[i_k == 1, ]
+
+table(d_a_train$gvtp)
+table(d_a_test$gvtp)
+
+mx_a <- maxent(
+  x = d_a_train %>% select(-gvtp), 
+  p = d_a_train %>% select(gvtp))
+plot(mx_a)
+
+response(mx_a, var = c("cppr", "hr__", "zinc", "mcos"))
+
+e <- evaluate(
+  p = d_a_test %>% filter(gvtp == 1), 
+  a = d_a_test %>% filter(gvtp == 0), 
+  mx_a)
+e
+```
+
+### Random Forest
+
+```{r}
+rf_a <- randomForest(gvtp ~ ., d_a_train)
+
+e <- evaluate(
+  p = d_a_test %>% filter(gvtp == 1), 
+  a = d_a_test %>% filter(gvtp == 0), 
+  rf_a)
+e
+```
+
+### GAM
+
+```{r}
+gam_a <- gam(
+  gvtp ~ s(cppr, k=5) + s(hr__, k=5) + s(zinc, k=5), 
+  data = d_a_train, 
+  family = binomial(link = "logit"))
+summary(gam_a)
+
+plot(gam_a, select=1)
+plot(gam_a, select=2)
+plot(gam_a, select=3)
+
+vis.gam(gam_a,ticktype="detailed",color="heat",theta=-35)  
+vis.gam(gam_a,se=2,theta=-35)
+
+e <- evaluate(
+  p = d_a_test %>% filter(gvtp == 1), 
+  a = d_a_test %>% filter(gvtp == 0), 
+  gam_a)
+e
+```
+
+```{r, eval=F}
+knitr::opts_chunk$set(eval = T)
 ```
 
 ### Fit models
@@ -149,21 +270,6 @@ plot(vi,'cor')
 vi@varImportance %>% 
   arrange(desc(corTest)) %>% 
   datatable()
-```
-
-### gam
-
-```{r}
-group      <- kfold(d, 5)
-pres_train <- d[group != 1, ]
-pres_test  <- d[group == 1, ]
-
-maxent()
-## Loading required namespace: rJava
-## This is MaxEnt version 3.4.1
-xm <- maxent(predictors, pres_train, factors='biome')
-plot(xm)
-
 ```
 
 
