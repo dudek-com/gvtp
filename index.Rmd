@@ -16,45 +16,11 @@ editor_options:
 knitr::opts_chunk$set(echo = T, warning = F, message = F)
 ```
 
-## Skim
-
 ```{r}
-# load libraries ----
-if (!require(librarian)){
-  install.packages(librarian)
-  library(librarian)
-}
-# load libraries, install if missing
-shelf(
-  # tables
-  DT,
-  # plots
-  kassambara/easyGgplot2, ggplot2, trelliscopejs, gapminder,
-  # sdm
-  corrplot, dismo, mgcv, randomForest, sdm,
-  # data wrangling
-  dplyr, purrr, readr, readxl, tidyr,
-  # utilities
-  fs, glue, here, htmltools, skimr)
-# sdm::installAll() # run once
-select = dplyr::select
-
-# paths & variables ----
-dir_gdrive <- case_when(
-  Sys.info()[['user']] == "bbest" ~ "/Volumes/GoogleDrive/My Drive/projects/dudek")
-d_xls    <- path(dir_gdrive, "data/gvtp_hab_char_data_compiled_Final.xls")
-cols_xls <- path(dir_gdrive, "data/gvtp_hab_char_columns.xlsx")
-# excel_sheets(d_xls)
-
-# read sheets of data
-plot   <- read_excel(d_xls, "Plot")
-spp    <- read_excel(d_xls, "Species")
-soil   <- read_excel(d_xls, "Soil Layers")
-veg    <- read_excel(d_xls, "Veg")
-herbht <- read_excel(d_xls, "Herb Height")
-gvtpht <- read_excel(d_xls, "GVTP Height Heads")
-rdm    <- read_excel(d_xls, "RDM")
+source("setup.R")
 ```
+
+## Skim
 
 ```{r, eval = F}
 # skim sheets
@@ -122,7 +88,9 @@ d_gvtp_ttest <- d_long %>%
     t_test = oneway.test(value ~ gvtp, var.equal = T)$p.value) %>% 
   arrange(t_test) #  View(d_gvtp_ttest)
 datatable(d_gvtp_ttest)
+```
 
+```{r facet hist, eval=F}
 ggplot(d_long, aes(x=value, fill=gvtp, color=gvtp)) +
   #facet_wrap(facets = vars(variable)) +
   geom_density(alpha=0.2) +
@@ -139,6 +107,7 @@ ggplot(d_long, aes(x=value, fill=gvtp, color=gvtp)) +
     path = "index_libs/trelli_predictors")
 ```
 
+
 ### Correlation among predictors
 
 * [Introduction to SDMs: data preparation and simple model fitting](https://damariszurell.github.io/HU-GCIB/3_SDM_intro.html)
@@ -150,6 +119,51 @@ cor_mat <- cor(d[,-1], method='spearman')
 # We can visualise this correlation matrix. For better visibility, we plot the correlation coefficients as percentages.
 corrplot.mixed(cor_mat, tl.pos='lt', tl.cex=0.5, number.cex=0.4, addCoefasPercent=T)
 ```
+
+### Species
+
+#### Native vs non-native
+
+```{r}
+
+spp %>% View()
+
+spp_native <- spp %>% 
+  group_by(plot, `Native/Naturalized`, ) %>% 
+  summarize(
+    pct_cover = sum(percent_cover_abs, na.rm = T)) %>% 
+  pivot_wider(names_from = `Native/Naturalized`, values_from = pct_cover) %>% 
+  replace_na(list(NATIVE = 0, NATURALIZED = 0)) %>% 
+  mutate(
+    native_ratio = NATIVE / (NATIVE + NATURALIZED)) %>% 
+  arrange(desc(native_ratio))
+View(spp_native)
+
+plot_native <- plot %>% 
+  mutate(
+    gvtp = !gvtp_count == "0") %>% 
+  left_join(
+    spp_native,
+    by = "plot")
+
+
+plot_native %>%
+  select(plot, gvtp, gvtp_count, native_ratio) %>% 
+  arrange(gvtp, native_ratio) %>% 
+  View()
+  
+# d_avg <- plot_native %>% gro
+  
+ggplot(plot_native, aes(x=native_ratio, fill=gvtp, color=gvtp)) +
+  geom_density(alpha=0.2) +
+  geom_histogram(
+    aes(y=..density..), position="identity", alpha=0.5) 
+  # geom_vline(
+  #   data = d_avg,
+  #   aes(xintercept=avg, color=gvtp),
+    # linetype="dashed")
+```
+
 
 ## SDM
 
@@ -171,8 +185,8 @@ predictors_ttest <- d_gvtp_ttest %>%
 d_a <- d %>% 
   select(gvtp, all_of(predictors_ttest))
 
-set.seed(0)
-i_k        <- kfold(d_a, 5)
+set.seed(42)
+i_k       <- kfold(d_a, 5)
 d_a_train <- d_a[i_k != 1, ]
 d_a_test  <- d_a[i_k == 1, ]
 
@@ -229,7 +243,7 @@ e
 ```
 
 ```{r, eval=F}
-knitr::opts_chunk$set(eval = T)
+knitr::opts_chunk$set(eval = F)
 ```
 
 ### Fit models
