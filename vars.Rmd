@@ -9,69 +9,137 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = F, echo = F, message = F)
+knitr::opts_chunk$set(warning = F, echo = F, message = F, eval = F)
 ```
 
-```{r}
-source("setup.R")
+```{r, eval = T}
+source("setup.R") # d, d_cols
+shelf(flextable, cowplot, officedown, officer)
 ```
+
+# Variable Selection
+
+* [Introduction to SDMs: data preparation and simple model fitting](https://damariszurell.github.io/HU-GCIB/3_SDM_intro.html#41_fitting_our_first_glm)
+
+```{r, eval = T}
+preds <- read_csv(here("data/pred_lm_p05.csv")) %>% 
+  left_join(
+    d_cols %>% 
+      filter(!str_starts(cat, "_")) %>% 
+      select(pred = new, cat), by = "pred")
+
+preds_lnd <- preds %>% 
+  filter(
+    cat  == "landscape",
+    resp == "g_pres") %>% 
+  # get lowest AIC of both linear models, without (lm1) and with x^2 (lm2) [n = 8 to 6]
+  arrange(pred, AIC) %>% 
+  group_by(pred) %>% 
+  summarize(
+    mdl = first(mdl))
+#View(preds_lnd)
+
+library(corrr)
+
+cor_lnd <- d %>% 
+  select(all_of(preds_lnd$pred)) %>% 
+  select(!where(is.factor)) %>% # drop: asp_cir
+  # cor(method='spearman')
+  correlate(method = "spearman") # , diagonal = 1)
+
+threshold = 0.7
+cor_lnd %>%  
+  shave %>% 
+  gather(-term, key = "term2", value = "cor") %>% 
+  filter(abs(cor) > threshold)
+
+
+    # Identify which variables should be excluded
+    exclude <- NULL
+    for (i in 1:length(sort_imp))
+    {
+        if ((sort_imp[i] %in% row.names(pairs))&
+            ((sort_imp[i] %in% exclude)==F)) {
+                cv <- cor_mat[setdiff(row.names(cor_mat),exclude),sort_imp[i]]
+                cv <- cv[setdiff(names(cv),sort_imp[1:i])]
+                exclude <- c(exclude,names(which((abs(cv)>=threshold)))) 
+            }
+    }
+    
+    # Select set of weakly correlated predictors:
+    pred_sel <- sort_imp[!(sort_imp %in% exclude)]
+    
+    # Return list with AIC, correlation matrix, and final predictors:
+    return(list(AIC=sort(aic_imp), cor_mat=cor_mat, pred_sel=pred_sel))
+
+
+cols_new_csv <- path(dir_gdrive, "data/gvtp_columns.csv")
+d_csv        <- here("data/pred_resp.csv")
+
+
+```
+
 
 
 # Table of predictors
 
 So far just for numeric predictors in the Plots worksheet.
 
-```{r, eval = T}
-d <- plot %>% 
-  filter(!is.na(gvtp_count)) %>% 
-  mutate(
-    gvtp = as.integer(!gvtp_count == "0")) %>% 
-  # TODO: handle non-numeric
-  select_if(is.numeric) %>% 
-  mutate(
-    gvtp = gvtp == 1)
+```{r}
+# d <- plot %>% 
+#   filter(!is.na(gvtp_count)) %>% 
+#   mutate(
+#     gvtp = as.integer(!gvtp_count == "0")) %>% 
+#   # TODO: handle non-numeric
+#   select_if(is.numeric) %>% 
+#   mutate(
+#     gvtp = gvtp == 1)
+
 #table(d$gvtp)
+
+
 
 #predictors <- setdiff(names(d), c("plot", "gvtp")) # %>% sort()
 
-d_long <- d %>% 
-  pivot_longer(-gvtp, "variable") # %>%
+# d_long <- d %>% 
+#   pivot_longer(-gvtp, "variable") # %>%
   # filter(variable %in% (unique(.$variable) %>% head(5))) # %>% 
   # mutate(
   #   gvtp = as.factor(gvtp)) %>% 
   #arrange(variable, gvtp, value)
 
-d_long$var <- abbreviate(d_long$variable, minlength=4)
+# d_long$var <- abbreviate(d_long$variable, minlength=4)
 
-d_avg <- d_long %>% 
-  select(-variable) %>% 
-  group_by(var, gvtp) %>% 
-  summarize(
-    min     = min(value, na.rm=T), 
-    avg     = mean(value, na.rm=T), 
-    max     = max(value, na.rm=T),
-    sd      = sd(value, na.rm=T),
-    .groups="drop")
+# d_avg <- d_long %>% 
+#   select(-variable) %>% 
+#   group_by(var, gvtp) %>% 
+#   summarize(
+#     min     = min(value, na.rm=T), 
+#     avg     = mean(value, na.rm=T), 
+#     max     = max(value, na.rm=T),
+#     sd      = sd(value, na.rm=T),
+#     .groups="drop")
 
-d_smry <- d_avg %>% 
+# d_smry <- d_avg %>% 
+#   pivot_wider(
+#     -sd, 
+#     names_from = gvtp, 
+#     names_glue = "{ifelse(gvtp, 'p', 'a')}_{.value}",
+#     values_from = c(min, avg, max))
+
+#d_pres_num_lng
+
+var_smry <- d_pres_num_avg %>% 
   pivot_wider(
     -sd, 
-    names_from = gvtp, 
-    names_glue = "{ifelse(gvtp, 'p', 'a')}_{.value}",
+    names_from = g_pres, 
+    names_glue = "{ifelse(g_pres==1, 'p', 'a')}_{.value}",
     values_from = c(min, avg, max))
 
-d_smry <- d_smry %>% 
-  left_join(
-    d_long %>% 
-      group_by(var, variable) %>% 
-      summarize(),
-    by = "var")
-
 plot_var <- function(var, redo = F){
-  # var = "anns"
-  var <- d_smry %>% 
-    filter(var == !!var) %>% 
-    pull(var)
+  # var = "cu"
+  v_smry <- var_smry %>% 
+    filter(var == !!var) 
   
   img <- here(glue("vars_imgs/{var}.png"))
   
@@ -79,16 +147,20 @@ plot_var <- function(var, redo = F){
     return(img)
   
   png(img, width = 4.8, height = 1.2, units="in", res=72)
-  p <- d_long %>% 
+  p <- d_pres_num_lng %>% 
     filter(var == !!var) %>% 
-    ggplot(aes(x=value, fill=gvtp, color=gvtp)) +
+    mutate(
+       g_pres = factor(c("absent", "present")[g_pres+1])) %>% 
+    ggplot(aes(x=value, fill=g_pres, color=g_pres)) +
     geom_density(alpha=0.2) +
     # geom_histogram(
     #   aes(y=..density..), position="identity", alpha=0.5) +
     geom_vline(
-      data = d_avg %>% 
+      data = d_pres_num_avg %>% 
+        mutate(
+          g_pres = factor(c("absent", "present")[g_pres+1])) %>%
         filter(var == !!var),
-      aes(xintercept=avg, color=gvtp),
+      aes(xintercept=avg, color=g_pres),
       linetype="solid", lwd=2) +
     theme_nothing() + 
     scale_x_continuous(expand=c(0,0)) +
@@ -104,22 +176,20 @@ plot_var <- function(var, redo = F){
 
 
 ```{r}
-librarian::shelf(flextable, cowplot, officedown, officer)
-
-d_smry <- d_smry %>% 
+var_smry <- var_smry %>% 
   mutate(
-    nchar   = nchar(variable),
-    Variable = strtrim(variable, 26),
+    nchar   = nchar(var),
+    Variable = strtrim(var, 26),
     Absence  = glue("{signif(a_avg, 3)} ({signif(a_min, 3)} - {signif(a_max, 3)})"),
     Presence = glue("{signif(p_avg, 3)} ({signif(p_min, 3)} - {signif(p_max, 3)})"),
     Histogram = "",
-    png = map_chr(var, plot_var, redo = F))
+    png = map_chr(var, plot_var, redo = T))
 
 ft <- flextable(
-  d_smry, 
+  var_smry, 
   col_keys = c("Variable", "Absence", "Presence", "Histogram"))
 ft <- compose(
-  ft, i = 1:nrow(d_smry), j = "Histogram", 
+  ft, i = 1:nrow(var_smry), j = "Histogram", 
   value = as_paragraph(as_image(src = png, width = 1.2, height = 0.3)))
 ft <- autofit(ft)
 ft

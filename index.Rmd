@@ -10,19 +10,21 @@ output:
     self_contained: false
 editor_options: 
   chunk_output_type: console
+bibliography: ["dudek_gvtp.bib"]
+csl: dudek_gvtp_apa.csl
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = T, warning = F, message = F)
+knitr::opts_chunk$set(echo = T, warning = F, message = F, eval = F)
 ```
 
-```{r}
+```{r, eval = T}
 source("setup.R")
 ```
 
 ## Skim
 
-```{r, eval = F}
+```{r, eval = T}
 # skim sheets
 h3("plot")
 skim(plot)
@@ -40,58 +42,310 @@ h3("rdm")
 skim(rdm)
 ```
 
-## Predictors prep
+## broom gam
+
+- https://r4ds.had.co.nz/many-models.html
+- https://mran.microsoft.com/snapshot/2016-06-20/web/packages/GGally/vignettes/ggcoef.html
+- [demonstration of Tibble -> Nest -> Model -> Plot -> TrelliscopeJS](https://gist.github.com/bbest/d6cb72e2a000fc50bf7e10196000ed5a)
+
+```{r broom all model, eval=F}
+library(broom)
+
+cols_pred_num <- d_all %>% 
+  select(all_of(cols_pred)) %>% 
+  select_if(is.numeric) %>% 
+  names()
+cols_pred_fac <- d_all %>% 
+  select(all_of(cols_pred)) %>% 
+  select_if(is.factor) %>% 
+  names()
+
+col_resp <- "g_cnt"
+
+terms_num <- paste(cols_pred_num, collapse = ") + s(")
+terms_fac <- paste(cols_pred_fac, collapse = " + ")
+
+frmla <- as.formula(glue("{col_resp} ~ s({terms_num}, k=5) + {terms_fac}"))
+
+mdl <- gam(frmla, data = d_all)
+
+terms <- paste(cols_pred, collapse = " + ")
+frmla <- as.formula(glue("{col_resp} ~ {terms}"))
+
+mdl <- lm(frmla, data = d_all)
+mdl <- tidy(mdl)
+View(mdl)
+# doh! too many predictor terms
+```
+
+
+## Data
+
+```{r, eval = T}
+datatable(d_cols)
+
+datatable(d)
+```
 
 ### Plot
 
 ```{r}
-d <- plot %>% 
-  filter(!is.na(gvtp_count)) %>% 
-  mutate(
-    gvtp = as.integer(!gvtp_count == "0")) %>% 
-  select_if(is.numeric)
+d_cnt_lng  <- get_resp_pred_num_long(d_all, "g_cnt", cols_pred)
+d_pres_lng <- get_resp_pred_num_long(d_all, "g_pres", cols_pred)
 
-predictors <- setdiff(names(d), c("plot", "gvtp")) %>% sort()
+d_pres_ttest <- get_var_ttest(d_pres_lng, "g_pres")
+d_cnt_ttest  <- get_var_ttest(d_cnt_lng , "g_cnt")
 
-d <- d %>% 
-  select(gvtp, all_of(predictors))
-
-# abbreviate names
-d_cols_abbr <- abbreviate(names(d), minlength=4)
-names(d) <- d_cols_abbr
-d_cols <- tibble(
-  column_original = names(d_cols_abbr),
-  column_abbreviated = d_cols_abbr)
-write_csv(d_cols, cols_xls)
-datatable(d_cols)
-
-datatable(d)
-
-d_long <- d %>% 
-  pivot_longer(-gvtp, "variable") %>%
-  #filter(variable %in% (unique(.$variable) %>% head(5))) %>% 
-  mutate(
-    gvtp = as.factor(gvtp)) %>% 
-  arrange(variable, gvtp, value)
-  
-d_gvtp_avg <- d_long %>% 
-  group_by(variable, gvtp) %>% 
-  summarize(
-    avg     = mean(value, na.rm=T), 
-    sd      = sd(value, na.rm=T),
-    .groups="drop")
-
-d_gvtp_ttest <- d_long %>% 
-  #filter(variable %in% (unique(.$variable) %>% head(5))) %>% 
-  group_by(variable) %>% 
-  summarize(
-    t_test = oneway.test(value ~ gvtp, var.equal = T)$p.value) %>% 
-  arrange(t_test) #  View(d_gvtp_ttest)
-datatable(d_gvtp_ttest)
+datatable(d_pres_ttest)
+datatable(d_cnt_ttest)
 ```
 
-```{r facet hist, eval=F}
-ggplot(d_long, aes(x=value, fill=gvtp, color=gvtp)) +
+## model selection
+
+* [5.5 Selecting predictors | Forecasting: Principles and Practice](https://otexts.com/fpp2/selecting-predictors.html)
+* [Model Specification: Choosing the Correct Regression Model - Statistics By Jim](https://statisticsbyjim.com/regression/model-specification-variable-selection/)
+
+```{r}
+pred_lm_p05_csv <- here("data/pred_lm_p05.csv")
+
+get_var_data <- function(resp, pred){
+  d_all %>% 
+    #select(plot, starts_with("g_"), all_of(v)) # %>% 
+    select(plot, all_of(c(resp, pred))) # %>% 
+    # rename_with(function(x) ifelse(x==v, "val", x))
+    }
+
+D <- tibble(
+  var = cols_pred) %>% 
+  mutate(
+    data = map(var, get_var_data))
+
+m = list()
+for (col_resp in cols_resp){ # col_resp = cols_resp[1]
+  # message(glue("col_resp: {col_resp}"))
+
+  # resp-pred data
+  m_resp <- tibble(
+    resp  = col_resp,
+    pred  = cols_pred) %>% 
+    mutate(
+      data = map2(
+        resp, pred, function(resp, pred){
+          d_all %>% 
+            select(plot, all_of(c(resp, pred))) }),
+      type = map2_chr(
+        data, pred, function(x,y) 
+          pull(x, all_of(y)) %>% class()))
+  
+  # lm model specifications
+  m_resp <- bind_rows(
+    m_resp %>% 
+      mutate(
+        mdl = "lm1",
+        f   = glue("{resp} ~ {pred}")),
+    m_resp %>% 
+      filter(type != "factor") %>% 
+      mutate(
+        mdl = "lm2",
+        f   = glue("{resp} ~ {pred} + I({pred}^2)")))
+
+  # all models    
+  m_resp <- m_resp %>% 
+    mutate(
+      lm  = pmap(
+        list(data=data, f=f), 
+        function(data, f){
+          lm(as.formula(f), data=data) }),
+      df = map(lm, glance)) %>% 
+    unnest(df)
+  lapply(m_resp, class)
+  
+  m[[col_resp]] <- m_resp
+}
+m <- bind_rows(m)
+
+# mA <- m
+
+message(glue("Total # of models lm (y~x) & lm2 (y~x+x^2; not factor): {nrow(m)}")) # 1510
+
+m <- m %>% 
+  filter(p.value <= 0.05) %>% 
+  arrange(resp, p.value, pred, type)
+
+# mB <- m
+
+message(glue("Filtered # of models p ≤ 0.05: {nrow(m)}")) # 246
+
+# archive models
+m %>% 
+  select(
+    resp, pred, type, mdl, f, 
+    r.squared, adj.r.squared, sigma, statistic, p.value, 
+    df, logLik, AIC, BIC, deviance, df.residual, nobs) %>% 
+  write_csv(pred_lm_p05_csv)
+
+
+m <- m %>% 
+  mutate(
+    plot = pmap(
+      list(data=data, resp=resp, pred=pred, type=type, mdl=mdl),
+      function(data, resp, pred, type, mdl){
+        g <- ggplot(data, aes_string(x=pred, y=resp))
+        if (mdl == "lm2"){
+          g + 
+            geom_count() +
+            stat_smooth(method = "lm", formula = y ~ x + I(x^2))
+        } else {
+          if (type=="factor"){
+            g + 
+              geom_boxplot() + 
+              geom_smooth(formula = y ~ x, method = "lm", se=FALSE, col = "blue")
+          } else {
+            g +
+              geom_count() +
+              stat_smooth(method = "lm", formula = y ~ x)
+          }
+        }}))
+# mC <- m
+
+# terms
+m_terms <- m %>% 
+  select(resp, pred, data, type, mdl, f, lm) %>% 
+  mutate(    
+    df = map(lm, tidy)) %>% 
+  unnest(df)
+m_terms %>% 
+  select(-data, -lm) %>% 
+  write_csv("data/pred_lm_p05_terms.csv")
+
+# save plots to file
+pwalk(
+  m,
+  function(resp, pred, type, mdl, plot, ...){
+    f_png <- glue("figures/pred_lm/{resp}.{pred}.{str_sub('type', 1, 3)}.{mdl}.png")
+    png(f_png)
+    print(plot)
+    dev.off() })
+```
+
+TODO:
+- weed out redundant vars:
+  - g_prod == g_repro, except plot 9: 0	vs 1674.4 (g_repro)
+  - wt_g == wt_lbs
+- try log(g_repro)
+- pick lowest p.value from (resp,pred) across {mdl}
+- show terms in Rmd: ## {resp}, ### {pred} ({type}, {mdl})
+- remove autocorrelated vars by resp.
+- create habitat suitability for g_cnt
+- create habitat suitability for g_cnt by category: landscape, biotic, soil
+
+
+## log(g_repro)
+
+```{r}
+hist(d_all$g_repro)
+hist(log(d_all$g_repro + 0.1))
+hist(log(d_all$g_repro + 0.001))
+```
+
+
+```{r}
+library(mgcViz)
+b <- getViz(gam_cnt)
+plot(b, select = 1)
+print.plotGam(b)
+
+
+m %>% 
+  filter(resp == "g_cnt", var == "plant") %>% 
+  pull(data) %>% 
+  .[[1]] %>% 
+  select(g_cnt, plant = val) %>% 
+  ggplot(aes(x = plant, y = g_cnt)) + 
+  geom_point() +
+  stat_smooth(method = "lm", col = "red")
+
+
+g_cnt	plant
+
+o <- plot( sm(b, 1) ) + 
+  l_fitLine(colour = "red") + l_rug(mapping = aes(x=x, y=y), alpha = 0.8) +
+    l_ciLine(mul = 5, colour = "blue", linetype = 2) + 
+    l_points(shape = 19, size = 1, alpha = 0.1) + theme_classic()
+print(o)
+
+print(plot(b, allTerms = T), pages = 1) # Calls print.plotGam()
+
+D <- D %>% 
+  mutate(
+    
+  )
+    
+d_gam <- tibble(
+  var = cols_pred) %>% 
+  mutate(
+    cnt_mdl = map(var, function(var){
+      if (is.numeric(d_all)){
+        frmla <- glue("g_cnt ~ s({var})")
+      } else {
+        frmla <- glue("g_cnt ~ {var}")
+      }
+      message(frmla)
+      gam(as.formula(frmla), data = d_all)
+    }))
+
+d_gam <- d_gam %>% 
+  mutate(
+    cnt_gcv  = map_dbl(cnt_mdl, function(x) x$gcv.ubre.dev))
+
+
+mdl <- gam(g_cnt ~ s(hrb_ht), data = d_all)
+plot(g_cnt ~ hrb_ht, data = d_all)
+plot(mdl, pages=1, residuals=T, all.terms=T, shade=T, shade.col=2)
+termplot(mdl, partial.resid=T, se=T, main=T)
+
+d_gam <- d_gam %>% 
+  arrange(cnt_gcv) %>% 
+  mutate(
+    cnt_plot = map(cnt_mdl, function(x){
+      plot(x, pages=1, residuals=T, all.terms=T, shade=T, shade.col=2)
+      #termplot(x, partial.resid=T, se=T, main=T)
+      }))
+
+d_gam %>% 
+  select(var, cnt_gcv) %>% 
+  arrange(cnt_gcv) %>% 
+  View()
+
+  mdl <- gam(g_cnt ~ asp, data = d_all)
+  plot(mdl, pages=1, residuals=T, all.terms=T, shade=T, shade.col=2)
+  mdl$gcv.ubre.dev
+
+
+d_all %>% 
+  pivot_longer(
+    select(-plot, -starts_with("g_")),
+    names_to  = "var",
+    values_to = "value")
+  group_by(var) %>% 
+  nest()
+  select(g_cnt, )
+
+mdl <- gam(g_cnt ~ s(al), data = d_all)
+plot(mdl, pages=1,residuals=T, all.terms=T, shade=T, shade.col=2)
+
+mdl$gcv.ubre.dev
+
+mdl <- gam(g_pres ~ s(al), data = d_all)
+plot(mdl, pages=1,residuals=T, all.terms=T, shade=T, shade.col=2)
+mdl
+
+
+?plot.gam
+```
+
+```{r facet hist}
+ggplot(d_pres_num_lng, aes(x=value, fill=g_pres, color=g_pres)) +
   #facet_wrap(facets = vars(variable)) +
   geom_density(alpha=0.2) +
   geom_histogram(
@@ -107,6 +361,271 @@ ggplot(d_long, aes(x=value, fill=gvtp, color=gvtp)) +
     path = "index_libs/trelli_predictors")
 ```
 
+## adehabitatHS
+
+habitat suitability
+
+### example 
+
+Example: This data set contains the map of 7 environmental variables in the Bauges Mountains (French Alps)
+
+```{r HS example, eval = F}
+library(adehabitatHS)
+data(bauges)
+names(bauges)
+
+map <- bauges$map
+mimage(map)
+
+image(map)
+locs <- bauges$locs
+points(locs, pch=3)
+
+cp <- count.points(locs, map)
+
+# tab: a data frame containing the value of the environmental variables in each pixel of the map
+tab <- slot(map, "data")
+names(tab)
+# pr: a vector containing the utilization weights associated to each pixel;
+pr  <- slot(cp, "data")[,1]
+
+histniche(tab, pr)
+
+# dudi.pca: performs a principal component analysis of the data frame passed as argument;
+pc <- dudi.pca(tab, scannf=FALSE)
+
+# General Niche-Environment System Factor Analysis (GNESFA). This framework is described in detail in Calenge and Basille (2008).
+
+# Reference = availability, Focus = utilization ----
+
+# gn <- gnesfa(pc, Focus = pr)
+#   Select the first number of axes (>=1): 1
+#   Select the second number of axes (>=0): 1
+gn <- gnesfa(pc, Focus = pr, nfFirst = 1, nfLast = 1, scannf=F)
+
+scatterniche(gn$li, pr, pts=TRUE)
+
+
+# Reference = utilization, Focus = availability ----
+# gn2 <- gnesfa(pc, Reference = pr)
+#   Select the first number of axes (>=1): 2
+#   Select the second number of axes (>=0): 0
+gn2 <- gnesfa(pc, Reference = pr, nfFirst = 2, nfLast = 0, scannf=F)
+
+# have a look at the niche of the chamois on the first factorial plane found by the analysis:
+scatterniche(gn2$li, pr)
+
+# have a look at the coefficients of the environmental variables in the definition of this axis
+s.arrow(gn2$co)
+
+# b/c variables are correlated on the study area (grass and fallen rocks occur at high elevation, whereas deciduous cover occurs at low elevation)
+# prefer to give a meaning to the axes of the GNESFA with the help of the correlations between the environmental variables and the axes of the GNESFA
+s.arrow(gn2$cor)
+
+
+# The GNESFA applied with the availability distribution as the focus is also named MADIFA (Mahalanobis Distances factor analysis, Calenge et al. 2008)
+mad <- madifa(pc, pr, scan=FALSE)
+
+plot(mad, map)
+# This figure presents:
+# - the eigenvalue diagram of the analysis;
+# - the coefficients of the variables in the definition of the axis;
+# - the plot of the niche on the factorial axes;
+# - the map of the Mahalanobis distances (see below);
+# - the map of the approximate Mahalanobis distances computed from the axes of the analysis;
+# - the correlation between the environmental variables and the axes of the analysis;
+
+# by default, the MADIFA is carried out with equal availability weights
+# However, unequal availability weights can also be defined with this function
+# pc <- dudi.pca(tab, row.w = av.w, scannf=FALSE) # av.w missing
+
+# map of these Mahalanobis distances
+MD <- mahasuhab(map, locs)
+image(MD)
+
+# skip some
+
+en1 <- enfa(pc, pr, scan=FALSE)
+gn3 <- gnesfa(pc, Reference=pr, scan=FALSE, centering="twice")
+
+# The eigenvalues diagram is presented below:
+barplot(en1$s)
+
+# Basille et al. (2008) showed that a biplot (Gabriel, 1971) can be used to show both the variables and the RU scores on the plane formed by the marginality vector (X direction) and any specialization axis (Y direction). This biplot can be drawn by:
+scatter(en1)
+
+
+# the marginality axis. The results of the ENFA are therefore consistent with the results returned by the MADIFA. Indeed the marginality axis is strongly correlated with the first axis of the MADIFA:
+plot(mad$li[,1], en1$li[,1], xlab="First axis of the MADIFA", ylab="Marginality axis")
+
+# dudi.acm: performs a multiple correspondence analysis of the data frame passed as argument (Tenenhaus and Young, 1985);
+
+# dudi.hillsmith: performs a Hill-Smith analysis of the data frame passed as argument (Hill and Smith, 1976);
+
+```
+
+### gvtp
+
+```{r HS gvtp, eval = F}
+library(adehabitatHS)
+
+pred_lm_p05_csv <- here("data/pred_lm_p05.csv")
+
+pred_lm_p05 <- read_csv(pred_lm_p05_csv)
+
+resp <- "g_cnt"
+
+preds <- pred_lm_p05 %>% 
+  filter(resp == !!resp) %>% 
+  distinct(pred) %>% 
+  pull(pred)
+
+
+
+fnames <- list.files(path=paste(system.file(package="dismo"), '/ex', sep=''), 
+              pattern='grd', full.names=TRUE )
+predictors <- stack(fnames)
+#plot(predictors)
+
+# file with presence points
+occurence <- paste(system.file(package="dismo"), '/ex/bradypus.csv', sep='')
+occ <- read.table(occurence, header=TRUE, sep=',')[,-1]
+
+# witholding a 20% sample for testing 
+fold <- kfold(occ, k=5)
+occtest <- occ[fold == 1, ]
+occtrain <- occ[fold != 1, ]
+
+# fit model, biome is a categorical variable
+me <- maxent(predictors, occtrain, factors='biome')
+
+# see the maxent results in a browser:
+# me
+
+# use "args"
+# me2 <- maxent(predictors, occtrain, factors='biome', args=c("-J", "-P"))
+
+# plot showing importance of each variable
+plot(me)
+
+# response curves
+response(me)
+
+# predict to entire dataset
+r <- predict(me, predictors) 
+
+# with some options:
+# r <- predict(me, predictors, args=c("outputformat=raw"), progress='text', 
+#      filename='maxent_prediction.grd')
+
+plot(r)
+points(occ)
+
+#testing
+# background data
+bg <- randomPoints(predictors, 1000)
+
+#simplest way to use 'evaluate'
+e1 <- evaluate(me, p=occtest, a=bg, x=predictors)
+
+# alternative 1
+# extract values
+pvtest <- data.frame(raster::extract(predictors, occtest))
+avtest <- data.frame(raster::extract(predictors, bg))
+
+e2 <- evaluate(me, p=pvtest, a=avtest)
+
+# alternative 2 
+# predict to testing points 
+testp <- predict(me, pvtest) 
+head(testp)
+testa <- predict(me, avtest) 
+
+e3 <- evaluate(p=testp, a=testa)
+e3
+threshold(e3)
+
+plot(e3, 'ROC')
+
+
+pr  <- select(d_all, all_of(resp)) %>% pull(1)
+tab <- select(d_all, all_of(preds)) %>% as.data.frame()
+
+histniche(tab, pr)
+
+# dudi.pca: performs a principal component analysis of the data frame passed as argument;
+pc <- dudi.pca(tab, scannf=FALSE)
+
+# General Niche-Environment System Factor Analysis (GNESFA). This framework is described in detail in Calenge and Basille (2008).
+
+# Reference = availability, Focus = utilization ----
+
+# gn <- gnesfa(pc, Focus = pr)
+#   Select the first number of axes (>=1): 1
+#   Select the second number of axes (>=0): 1
+gn <- gnesfa(pc, Focus = pr, nfFirst = 1, nfLast = 1, scannf=F)
+
+scatterniche(gn$li, pr, pts=TRUE)
+
+
+# Reference = utilization, Focus = availability ----
+# gn2 <- gnesfa(pc, Reference = pr)
+#   Select the first number of axes (>=1): 2
+#   Select the second number of axes (>=0): 0
+gn2 <- gnesfa(pc, Reference = pr, nfFirst = 2, nfLast = 0, scannf=F)
+
+# have a look at the niche of the chamois on the first factorial plane found by the analysis:
+scatterniche(gn2$li, pr)
+s.arrow(gn2$co, add.plot = T)
+
+# have a look at the coefficients of the environmental variables in the definition of this axis
+s.arrow(gn2$co)
+
+# b/c variables are correlated on the study area (grass and fallen rocks occur at high elevation, whereas deciduous cover occurs at low elevation)
+# prefer to give a meaning to the axes of the GNESFA with the help of the correlations between the environmental variables and the axes of the GNESFA
+s.arrow(gn2$cor)
+
+
+# The GNESFA applied with the availability distribution as the focus is also named MADIFA (Mahalanobis Distances factor analysis, Calenge et al. 2008)
+mad <- madifa(pc, pr, scan=FALSE)
+
+plot(mad, map)
+# This figure presents:
+# - the eigenvalue diagram of the analysis;
+# - the coefficients of the variables in the definition of the axis;
+# - the plot of the niche on the factorial axes;
+# - the map of the Mahalanobis distances (see below);
+# - the map of the approximate Mahalanobis distances computed from the axes of the analysis;
+# - the correlation between the environmental variables and the axes of the analysis;
+
+# by default, the MADIFA is carried out with equal availability weights
+# However, unequal availability weights can also be defined with this function
+# pc <- dudi.pca(tab, row.w = av.w, scannf=FALSE) # av.w missing
+
+# map of these Mahalanobis distances
+MD <- mahasuhab(map, locs)
+image(MD)
+
+# skip some
+
+en1 <- enfa(pc, pr, scan=FALSE)
+gn3 <- gnesfa(pc, Reference=pr, scan=FALSE, centering="twice")
+
+# The eigenvalues diagram is presented below:
+barplot(en1$s)
+
+# Basille et al. (2008) showed that a biplot (Gabriel, 1971) can be used to show both the variables and the RU scores on the plane formed by the marginality vector (X direction) and any specialization axis (Y direction). This biplot can be drawn by:
+scatter(en1)
+
+
+# the marginality axis. The results of the ENFA are therefore consistent with the results returned by the MADIFA. Indeed the marginality axis is strongly correlated with the first axis of the MADIFA:
+plot(mad$li[,1], en1$li[,1], xlab="First axis of the MADIFA", ylab="Marginality axis")
+
+# dudi.acm: performs a multiple correspondence analysis of the data frame passed as argument (Tenenhaus and Young, 1985);
+
+# dudi.hillsmith: performs a Hill-Smith analysis of the data frame passed as argument (Hill and Smith, 1976);
+
+```
 
 ### Correlation among predictors
 
@@ -125,36 +644,7 @@ corrplot.mixed(cor_mat, tl.pos='lt', tl.cex=0.5, number.cex=0.4, addCoefasPercen
 #### Native vs non-native
 
 ```{r}
-
-spp %>% View()
-
-spp_native <- spp %>% 
-  group_by(plot, `Native/Naturalized`, ) %>% 
-  summarize(
-    pct_cover = sum(percent_cover_abs, na.rm = T)) %>% 
-  pivot_wider(names_from = `Native/Naturalized`, values_from = pct_cover) %>% 
-  replace_na(list(NATIVE = 0, NATURALIZED = 0)) %>% 
-  mutate(
-    native_ratio = NATIVE / (NATIVE + NATURALIZED)) %>% 
-  arrange(desc(native_ratio))
-View(spp_native)
-
-plot_native <- plot %>% 
-  mutate(
-    gvtp = !gvtp_count == "0") %>% 
-  left_join(
-    spp_native,
-    by = "plot")
-
-
-plot_native %>%
-  select(plot, gvtp, gvtp_count, native_ratio) %>% 
-  arrange(gvtp, native_ratio) %>% 
-  View()
-  
-# d_avg <- plot_native %>% gro
-  
-ggplot(plot_native, aes(x=native_ratio, fill=gvtp, color=gvtp)) +
+ggplot(plot, aes(x=pct_native, fill=gvtp, color=gvtp)) +
   geom_density(alpha=0.2) +
   geom_histogram(
     aes(y=..density..), position="identity", alpha=0.5) 
@@ -297,7 +787,24 @@ vi@varImportance %>%
 - [6 Available Models | The caret Package](http://topepo.github.io/caret/available-models.html)
 - [Lab 6. Species](http://benbestphd.com/landscape-ecology-labs/lab6.html)
 
+## Notes
+
+### Circular stats
+
+- [@kvasnesQuantifyingSuitableLate2018]:
+  
+  > Aspect is a circular variable (0°— north to 360°— north) and was therefore transformed to radians ($r_{aspect} = aspect ∗ (2π/360)$), and in the next step we created two variables representing north-exposure ($N_{aspect} =cos(r_{aspect})$) and eastern exposure ($E_{aspect} = sin(r_{aspect})$) [6]. We also constructed a categorical variable with five levels representing aspect, north (315°–45°), east (45°–135°), south (135°–225°), west (225°–315°) and flat areas (0°).
+  
+- [@kvasnesQuantifyingSuitableLate2018] ([6] reference from above):
+
+  > Given that aspect is a circular variable (0°– 360°), it was converted to sine and cosine values, decomposing them into a north–south and an east– west component {‘north exposure’ = [cos(aspect in radians)] and ‘east exposure’ = [sin(aspect in radians)]}. Sine values ranged from -1 (due west) to 1 (due east), whereas cosine values ranged from -1 (due south) to 1 (due north). To facilitate interpretation, the estimated parameter values for the sine and cosine components of aspect were back-transformed and presented in degrees.
+
+
 ## References
+
+
+
+
 
 [Zotero group: dudek-gvtp](https://www.zotero.org/groups/2587262/dudek-gvtp/library)
 

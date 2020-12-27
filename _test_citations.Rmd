@@ -1,0 +1,22 @@
+---
+title: "test citations"
+output: html_document
+bibliography: ["dudek_gvtp.bib"]
+csl: dudek_gvtp_apa.csl
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Circular stats
+
+- [@kvasnesQuantifyingSuitableLate2018]:
+  
+  > Aspect is a circular variable (0°—north to 360°— north) and was therefore transformed to radians ($r_{aspect} = aspect ∗ (2π/360)$), and in the next step we created two variables representing north-exposure ($N_{aspect} =cos(r_{aspect})$) and eastern exposure ($E_{aspect} = sin(r_{aspect})$) [6]. We also constructed a categorical variable with five levels representing aspect, north (315°–45°), east (45°–135°), south (135°–225°), west (225°–315°) and flat areas (0°).
+
+- [@kvasnesQuantifyingSuitableLate2018] ([6] reference from above):
+
+  > Given that aspect is a circular variable (0°–360°), it was converted to sine and cosine values, decomposing them into a north–south and an east– west component {‘north exposure’ = [cos(aspect in radians)] and ‘east exposure’ = [sin(aspect in radians)]}. Sine values ranged from -1 (due west) to 1 (due east), whereas cosine values ranged from -1 (due south) to 1 (due north). To facilitate interpretation, the estimated parameter values for the sine and cosine components of aspect were back-transformed and presented in degrees. 
+
+## References
