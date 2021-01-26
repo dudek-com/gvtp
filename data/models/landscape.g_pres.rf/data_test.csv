@@ -1,0 +1,9 @@
+g_pres,asp_cir,bare,dstrb_cir,slp_deg_cir,slp_pos
+present,NW,20,22,5,1
+absent,SE,5,7,15,0
+present,SW,40,35,15,0
+absent,W,2,2,10,0
+present,N,5,2,7,1
+absent,SE,2,5,7,0
+absent,N,15,15,20,0
+absent,SW,1,5,25,0

@@ -1,0 +1,9 @@
+pred,integer,level
+asp_cir,1,E
+asp_cir,2,N
+asp_cir,3,NE
+asp_cir,4,NW
+asp_cir,5,S
+asp_cir,6,SE
+asp_cir,7,SW
+asp_cir,8,W

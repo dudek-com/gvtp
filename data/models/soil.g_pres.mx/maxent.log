@@ -1,0 +1,34 @@
+Thu Jan 21 23:35:06 PST 2021
+MaxEnt version 3.4.3
+Reading file absence
+readGrid: max memory 536870912, total allocated 536870912, free 346506512, used 190364400, increment 19922944
+Reading samples from presence
+Read samples: max memory 536870912, total allocated 536870912, free 346506512, used 190364400, increment 0
+Adding samples to background in feature space
+Command line used:  autorun -e /Users/bbest/github/gvtp/data/models/soil.g_pres.mx/absence -o /Users/bbest/github/gvtp/data/models/soil.g_pres.mx -s /Users/bbest/github/gvtp/data/models/soil.g_pres.mx/presence -z
+Command line to repeat: java density.MaxEnt nowarnings noprefixes outputdirectory=/Users/bbest/github/gvtp/data/models/soil.g_pres.mx samplesfile=/Users/bbest/github/gvtp/data/models/soil.g_pres.mx/presence environmentallayers=/Users/bbest/github/gvtp/data/models/soil.g_pres.mx/absence autorun novisible
+Species: species
+Layers: as ca_mgl fe mo ph rel_infil soil_txtr sr zn
+Layertypes: Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous
+outputdirectory: /Users/bbest/github/gvtp/data/models/soil.g_pres.mx
+samplesfile: /Users/bbest/github/gvtp/data/models/soil.g_pres.mx/presence
+environmentallayers: /Users/bbest/github/gvtp/data/models/soil.g_pres.mx/absence
+autorun: true
+visible: false
+
+getSamples: max memory 536870912, total allocated 536870912, free 345984272, used 190886640, increment 522240
+Making features
+makeFeatures: max memory 536870912, total allocated 536870912, free 345984272, used 190886640, increment 0
+species: 
+Regularization values: linear/quadratic/product: 0.586, categorical: 0.321, threshold: 1.850, hinge: 0.500
+15 samples
+Density: max memory 536870912, total allocated 536870912, free 345984272, used 190886640, increment 0
+linearPredictor: max memory 536870912, total allocated 536870912, free 345984272, used 190886640, increment 0
+FeaturedSpace: max memory 536870912, total allocated 536870912, free 345984272, used 190886640, increment 0
+Sequential: max memory 536870912, total allocated 536870912, free 345984272, used 190886640, increment 0
+Initial loss: 3.4657359027997265
+140: time = 0.018000 loss = 3.127381
+Resulting gain: 0.3383551391026147
+Projecting...
+Writing file /Users/bbest/github/gvtp/data/models/soil.g_pres.mx/species.csv
+Ending

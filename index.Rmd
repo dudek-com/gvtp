@@ -661,6 +661,31 @@ Species distribution modeling...
 
 ### Maxent
 
+```{r}
+d_long <- d %>% 
+  pivot_longer(-g_pres, "variable") %>%
+  #filter(variable %in% (unique(.$variable) %>% head(5))) %>% 
+  mutate(
+    g_pres = as.factor(g_pres)) %>% 
+  arrange(variable, g_pres, value)
+  
+d_gvtp_avg <- d_long %>% 
+  group_by(variable, gvtp) %>% 
+  summarize(
+    avg     = mean(value, na.rm=T), 
+    sd      = sd(value, na.rm=T),
+    .groups="drop")
+
+d_gvtp_ttest <- d_long %>% 
+  #filter(variable %in% (unique(.$variable) %>% head(5))) %>% 
+  group_by(variable) %>% 
+  summarize(
+    t_test = oneway.test(value ~ gvtp, var.equal = T)$p.value) %>% 
+  arrange(t_test) #  View(d_gvtp_ttest)
+datatable(d_gvtp_ttest)
+```
+
+
 * [Maxent -- Modeling methods | R Spatial](https://rspatial.org/raster/sdm/6_sdm_methods.html#maxent)
 
 ```{r}

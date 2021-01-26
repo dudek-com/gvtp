@@ -1,0 +1,9 @@
+pred,integer,level
+rel_infil,1,fair
+rel_infil,2,fair/slow
+rel_infil,3,slow
+rel_infil,4,slow/fair
+soil_txtr,1,clay
+soil_txtr,2,clay loam
+soil_txtr,3,loam
+soil_txtr,4,sandy loam

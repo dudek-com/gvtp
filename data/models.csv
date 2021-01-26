@@ -1,0 +1,27 @@
+type,cat,resp,rf_NRMSE_sd,predvars,rf_Accuracy,mx_Accuracy
+continous,biotic,g_ht,0.5862015917437902,hrb_ht + nonnativ + plant + wt_g,NA,NA
+continous,biotic,g_veg,0.8169411289326535,asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir,NA,NA
+continous,biotic,g_flwr,0.8355756331605233,hrb_ht + nonnativ + plant + wt_g,NA,NA
+continous,biotic,g_cnt,0.8866364922983897,plant + wt_g,NA,NA
+continous,biotic,g_fruit,1.0314135494622878,hrb_ht + wt_g,NA,NA
+continous,biotic,g_cov,1.0676078339784183,nonnativ + plant,NA,NA
+continous,biotic,g_repro,7.020951410655601,plant,NA,NA
+continous,landscape,g_ht,0.811522838577304,asp + asp_cir + dstrb_cir + slp_deg_cir + slp_pos,NA,NA
+continous,landscape,g_flwr,0.9162713817254181,asp_cir + dstrb + dstrb_cir,NA,NA
+continous,landscape,g_cnt,0.9995097792812616,dstrb_cir + slp_shp_cir,NA,NA
+continous,landscape,g_cov,1.001943673757621,asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir,NA,NA
+continous,landscape,g_fruit,1.043157363542102,asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir,NA,NA
+continous,landscape,g_head,1.4346211776389735,asp_deg + slp_pos + slp_shp,NA,NA
+continous,landscape,g_repro,2.804531125847875,asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir,NA,NA
+continous,landscape,g_veg,3.2193746558686036,dstrb + dstrb_cir + slp_pos,NA,NA
+continous,soil,g_ht,0.7973355644149824,as + ca + cation + fe + mo + ph + rel_infil + zn,NA,NA
+continous,soil,g_veg,0.9359612230329327,al + li + pb + rel_infil,NA,NA
+continous,soil,g_repro,0.9473670847951828,al,NA,NA
+continous,soil,g_cov,0.9656032200994332,al,NA,NA
+continous,soil,g_cnt,1.0117366537069066,al + hlf_sat,NA,NA
+continous,soil,g_flwr,1.081295758198799,cation + fe + mo + ph + rel_infil,NA,NA
+continous,soil,g_head,1.6892416038048568,al + as + rel_infil,NA,NA
+continous,soil,g_fruit,4.305674630696656,cu + sar,NA,NA
+binary,biotic,g_pres,NA,hrb_ht + nonnativ + plant + wt_g,0.75,1
+binary,landscape,g_pres,NA,asp_cir + bare + dstrb_cir + slp_deg_cir + slp_pos,0.875,1
+binary,soil,g_pres,NA,as + ca_mgl + fe + mo + ph + rel_infil + soil_txtr + sr + zn,0.625,0.875

@@ -1,0 +1,17 @@
+"species","x","y","asp_cir","bare","dstrb_cir","slp_deg_cir","slp_pos"
+"background",1,1,5,0,1,5,-1
+"background",2,2,6,5,7,15,0
+"background",3,3,8,2,2,10,0
+"background",4,4,5,0,0,16,0
+"background",5,5,1,1,1,10,0
+"background",6,6,8,15,3,10,1
+"background",7,7,4,5,5,15,0
+"background",8,8,2,10,8,17,0
+"background",9,9,2,6,8,25,1
+"background",10,10,2,15,15,20,0
+"background",11,11,6,2,1,25,-1
+"background",12,12,7,40,2,25,0
+"background",13,13,7,5,1,15,0
+"background",14,14,7,1,5,25,0
+"background",15,15,6,3,2,9,-1
+"background",16,16,1,1,3,22,-1
