@@ -241,7 +241,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Habitat Characterization of Gaviota Tarplant (<em>Dienandra increscens ssp. villosa</em>)</h1>
 <h4 class="author">Benjamin D. Best, Jake Marcon, Kathleen Dayton</h4>
-<h4 class="date">2021-03-02 14:47</h4>
+<h4 class="date">2021-03-02 15:01</h4>
 
 </div>
 
@@ -249,13 +249,13 @@ div.tocify {
 <p>Alternate format: <a href="index.docx">Word docx</a></p>
 <div id="introduction" class="section level1">
 <h1><span class="header-section-number">1</span> Introduction</h1>
-<p>Developing renewable energy in an environmentally responsible manner requires mitigation of potentially sensitive species. Herein we characterize the habitat of the Gaviota tarplant ( <em>Dienandra increscens ssp. villosa</em>) for the Strauss Wind Energy Site in north Santa Barbara County area for the purposes of delineating habitat and informing potential enhancement and restoration efforts.</p>
-<p>To describe habitat we built separate models associated with different stages of identification associated with different environmental predictors: 1) <strong>landscape</strong> features describable based on terrain given a digital elevation model (DEM); 2) <strong>biotic</strong> factors around the plants related to species performance; and 3) <strong>soil</strong> characteristics derived from lab analysis. Each of these stages represents an increasingly detailed view requiring additional levels of effort. This phased approach is meant to reduce the costs in time and effort for facilitating future survey and restoration efforts.</p>
+<p>Developing renewable energy in an environmentally responsible manner requires mitigation of potentially sensitive species. Herein we characterize the habitat of the Gaviota tarplant ( <em>Dienandra increscens ssp. villosa</em>) for the Strauss Wind Energy Site in north Santa Barbara County, California area for the purposes of delineating habitat and informing potential enhancement and restoration efforts.</p>
+<p>To describe habitat we built separate models associated with different stages of identification associated with different environmental predictors: 1) <strong>landscape</strong> features describable based on terrain given a digital elevation model (DEM); 2) <strong>biotic</strong> factors related to the plant’s productivity; and 3) <strong>soil</strong> characteristics derived from lab analysis. Each of these stages represents an increasingly detailed view requiring additional levels of effort to assess. This phased approach is meant to reduce the time and expense for facilitating future survey and restoration efforts.</p>
 <p>Given these environmental predictors various responses were used to build the statistical relationships based on the binary presence or absence and nine continuous responses related to abundance, percent cover, height, flowering and fruiting. We use the most sophisticated common methods for building species distribution models, namely <em><strong>MaxEnt</strong></em> for binary presence/absence <span class="citation">(Elith et al., 2011; Elith &amp; Leathwick, 2009; Fletcher et al., 2019; Merow et al., 2013; Phillips et al., 2017)</span> and for continous responses <em><strong>RandomForest</strong></em> <span class="citation">(Evans et al., 2011; Kosicki, 2020; Luan et al., 2020; Zhang et al., 2020)</span>.</p>
 </div>
 <div id="methods" class="section level1">
 <h1><span class="header-section-number">2</span> Methods</h1>
-<p>The observational data was limited to 40 observations nearly evenly weighted by presence (n=21) and absence (n=19) of Gaviota tarplant (GVTP; <em>Dienandra increscens ssp. villosa</em>). The environmental predictors were much more numerous (n=81; Table <a href="#tab:tab-predictors">2.2</a>) than response (n=10; (Table <a href="#tab:tab-responses">2.1</a>) terms, categorized by 19 landscape, 7 biotic and 55 soil predictor variables.</p>
+<p>The observational data was limited to 40 observations nearly evenly weighted by presence (n=21) and absence (n=19) of Gaviota tarplant (GVTP; <em>Dienandra increscens ssp. villosa</em>). The environmental predictors were much more numerous (n=81; Table <a href="#tab:tab-predictors">2.2</a>) than response terms (n=10) and were classified into 19 landscape, 7 biotic and 55 soil predictor categories ((Table <a href="#tab:tab-responses">2.1</a>).</p>
 <table>
 <caption><span id="tab:tab-responses">Table 2.1: </span>Biological response variables with short and long names.</caption>
 <thead>
@@ -725,7 +725,7 @@ div.tocify {
 </tbody>
 </table>
 <p>Certain predictor and response terms were created or transformed to elicit meaningful relationships. The reproductive potential response was calculated as the number of GVTP plants multiplied by the average count of heads (<span class="math inline">\(gvtp\_reproductive\_potential = gvtp\_count * gvtp\_heads\)</span>). Since aspect is a circular variable (0°— north to 360°— north), it was transformed to radians (<span class="math inline">\(aspect\_rad = aspect\_deg ∗ (2π/360)\)</span>) to then create variables representing northern (<span class="math inline">\(aspect\_north =cos(aspect\_rad)\)</span>) and eastern exposure (<span class="math inline">\(aspect\_east = sin(aspect\_rad)\)</span>) <span class="citation">(Kvasnes et al., 2018)</span>.</p>
-<p>Given many more predictors (n=81) than observations (n=40), the first challenge of this analysis was to winnow predictors down to a reasonable subset so as to avoid issues of overfitting and multicollinearity. To do this, we pre-selected predictors (<code>x</code>) across the suite of responses (<code>y</code>) based on individual relationships showing a significant relationship (p.value &lt;= 0.05) for either a simple linear model (<code>y ~ x</code>) or one with an additional quadratic term (<code>y ~ x + x^2</code>) to allow for non-linear niche response (i.e. bell-shaped biological response around some optimal environmental predictor value). Predictors were further filtered for those not autocorrelated (Spearman’s correlation &lt;= 0.7) based on the individual model with the lowest Akaike information criterion (AIC) to produce the most parsimonious model without autocorrelated predictors.</p>
+<p>Given many more predictors (n=81) than observations (n=40), the first challenge of this analysis was to winnow predictors down to a reasonable subset so as to avoid issues of overfitting and multicollinearity. To do this, we pre-selected predictors (<code>x</code>) across the suite of responses (<code>y</code>) based on individual significant relationships with responses (p.value &lt;= 0.05) for either a simple linear model (<code>y ~ x</code>) or one with an additional quadratic term (<code>y ~ x + x^2</code>) to allow for non-linear niche response (i.e. bell-shaped biological response around some optimal environmental predictor value). Predictors were further filtered for those not autocorrelated (Spearman’s correlation &lt;= 0.7) based on the individual model with the lowest Akaike information criterion (AIC) to produce the most parsimonious model without autocorrelated predictors.</p>
 <p>Once a reasonable subset of predictors were chosen per response, data were randomly split into training data (80%) to fit the model and test data (20%) to evaluate model performance. Model performance was based on Accuracy (higher score is better) for the binary response (presence) to compare Maxent against RandomForest models. To compare the continuous response models, a Normalized Root Mean Square Error (NRMSE; lower score is better) was used to allow for model selection between different response terms.</p>
 <p>To then select which models to employ for each category (landscape, biotic, soil) requires a value judgement. We propose that the presence response be used at the landscape level as a logical, simple first step in habitat assessment. For this type of binary response data Maxent has been demonstrated to be especially performant with few observations <span class="citation">(Fletcher et al., 2019; Hijmans &amp; Elith, 2013)</span>. For the subsequent biotic and soil categories, a model based on continuous response could then inform on the reproductive potential of the species amongst within a set of landscape-derived sites.</p>
 </div>
@@ -793,33 +793,9 @@ div.tocify {
 <tbody>
 <tr class="odd">
 <td align="left">biotic</td>
-<td align="left">g_repro</td>
-<td align="left">plant</td>
-<td align="right">7.0209514</td>
-</tr>
-<tr class="even">
-<td align="left">biotic</td>
-<td align="left">g_cov</td>
-<td align="left">nonnativ + plant</td>
-<td align="right">1.0676078</td>
-</tr>
-<tr class="odd">
-<td align="left">biotic</td>
-<td align="left">g_fruit</td>
-<td align="left">hrb_ht + wt_g</td>
-<td align="right">1.0314135</td>
-</tr>
-<tr class="even">
-<td align="left">biotic</td>
-<td align="left">g_cnt</td>
-<td align="left">plant + wt_g</td>
-<td align="right">0.8866365</td>
-</tr>
-<tr class="odd">
-<td align="left">biotic</td>
-<td align="left">g_flwr</td>
+<td align="left">g_ht</td>
 <td align="left">hrb_ht + nonnativ + plant + wt_g</td>
-<td align="right">0.8355756</td>
+<td align="right">0.5862016</td>
 </tr>
 <tr class="even">
 <td align="left">biotic</td>
@@ -829,105 +805,129 @@ div.tocify {
 </tr>
 <tr class="odd">
 <td align="left">biotic</td>
-<td align="left">g_ht</td>
-<td align="left">hrb_ht + nonnativ + plant + wt_g</td>
-<td align="right">0.5862016</td>
-</tr>
-<tr class="even">
-<td align="left">landscape</td>
-<td align="left">g_veg</td>
-<td align="left">dstrb + dstrb_cir + slp_pos</td>
-<td align="right">3.2193747</td>
-</tr>
-<tr class="odd">
-<td align="left">landscape</td>
-<td align="left">g_repro</td>
-<td align="left">asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir</td>
-<td align="right">2.8045311</td>
-</tr>
-<tr class="even">
-<td align="left">landscape</td>
-<td align="left">g_head</td>
-<td align="left">asp_deg + slp_pos + slp_shp</td>
-<td align="right">1.4346212</td>
-</tr>
-<tr class="odd">
-<td align="left">landscape</td>
-<td align="left">g_fruit</td>
-<td align="left">asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir</td>
-<td align="right">1.0431574</td>
-</tr>
-<tr class="even">
-<td align="left">landscape</td>
-<td align="left">g_cov</td>
-<td align="left">asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir</td>
-<td align="right">1.0019437</td>
-</tr>
-<tr class="odd">
-<td align="left">landscape</td>
-<td align="left">g_cnt</td>
-<td align="left">dstrb_cir + slp_shp_cir</td>
-<td align="right">0.9995098</td>
-</tr>
-<tr class="even">
-<td align="left">landscape</td>
 <td align="left">g_flwr</td>
-<td align="left">asp_cir + dstrb + dstrb_cir</td>
-<td align="right">0.9162714</td>
+<td align="left">hrb_ht + nonnativ + plant + wt_g</td>
+<td align="right">0.8355756</td>
+</tr>
+<tr class="even">
+<td align="left">biotic</td>
+<td align="left">g_cnt</td>
+<td align="left">plant + wt_g</td>
+<td align="right">0.8866365</td>
 </tr>
 <tr class="odd">
+<td align="left">biotic</td>
+<td align="left">g_fruit</td>
+<td align="left">hrb_ht + wt_g</td>
+<td align="right">1.0314135</td>
+</tr>
+<tr class="even">
+<td align="left">biotic</td>
+<td align="left">g_cov</td>
+<td align="left">nonnativ + plant</td>
+<td align="right">1.0676078</td>
+</tr>
+<tr class="odd">
+<td align="left">biotic</td>
+<td align="left">g_repro</td>
+<td align="left">plant</td>
+<td align="right">7.0209514</td>
+</tr>
+<tr class="even">
 <td align="left">landscape</td>
 <td align="left">g_ht</td>
 <td align="left">asp + asp_cir + dstrb_cir + slp_deg_cir + slp_pos</td>
 <td align="right">0.8115228</td>
 </tr>
-<tr class="even">
-<td align="left">soil</td>
-<td align="left">g_fruit</td>
-<td align="left">cu + sar</td>
-<td align="right">4.3056746</td>
-</tr>
 <tr class="odd">
-<td align="left">soil</td>
-<td align="left">g_head</td>
-<td align="left">al + as + rel_infil</td>
-<td align="right">1.6892416</td>
-</tr>
-<tr class="even">
-<td align="left">soil</td>
+<td align="left">landscape</td>
 <td align="left">g_flwr</td>
-<td align="left">cation + fe + mo + ph + rel_infil</td>
-<td align="right">1.0812958</td>
+<td align="left">asp_cir + dstrb + dstrb_cir</td>
+<td align="right">0.9162714</td>
 </tr>
-<tr class="odd">
-<td align="left">soil</td>
+<tr class="even">
+<td align="left">landscape</td>
 <td align="left">g_cnt</td>
-<td align="left">al + hlf_sat</td>
-<td align="right">1.0117367</td>
-</tr>
-<tr class="even">
-<td align="left">soil</td>
-<td align="left">g_cov</td>
-<td align="left">al</td>
-<td align="right">0.9656032</td>
+<td align="left">dstrb_cir + slp_shp_cir</td>
+<td align="right">0.9995098</td>
 </tr>
 <tr class="odd">
-<td align="left">soil</td>
-<td align="left">g_repro</td>
-<td align="left">al</td>
-<td align="right">0.9473671</td>
+<td align="left">landscape</td>
+<td align="left">g_cov</td>
+<td align="left">asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir</td>
+<td align="right">1.0019437</td>
 </tr>
 <tr class="even">
+<td align="left">landscape</td>
+<td align="left">g_fruit</td>
+<td align="left">asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir</td>
+<td align="right">1.0431574</td>
+</tr>
+<tr class="odd">
+<td align="left">landscape</td>
+<td align="left">g_head</td>
+<td align="left">asp_deg + slp_pos + slp_shp</td>
+<td align="right">1.4346212</td>
+</tr>
+<tr class="even">
+<td align="left">landscape</td>
+<td align="left">g_repro</td>
+<td align="left">asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir</td>
+<td align="right">2.8045311</td>
+</tr>
+<tr class="odd">
+<td align="left">landscape</td>
+<td align="left">g_veg</td>
+<td align="left">dstrb + dstrb_cir + slp_pos</td>
+<td align="right">3.2193747</td>
+</tr>
+<tr class="even">
+<td align="left">soil</td>
+<td align="left">g_ht</td>
+<td align="left">as + ca + cation + fe + mo + ph + rel_infil + zn</td>
+<td align="right">0.7973356</td>
+</tr>
+<tr class="odd">
 <td align="left">soil</td>
 <td align="left">g_veg</td>
 <td align="left">al + li + pb + rel_infil</td>
 <td align="right">0.9359612</td>
 </tr>
+<tr class="even">
+<td align="left">soil</td>
+<td align="left">g_repro</td>
+<td align="left">al</td>
+<td align="right">0.9473671</td>
+</tr>
 <tr class="odd">
 <td align="left">soil</td>
-<td align="left">g_ht</td>
-<td align="left">as + ca + cation + fe + mo + ph + rel_infil + zn</td>
-<td align="right">0.7973356</td>
+<td align="left">g_cov</td>
+<td align="left">al</td>
+<td align="right">0.9656032</td>
+</tr>
+<tr class="even">
+<td align="left">soil</td>
+<td align="left">g_cnt</td>
+<td align="left">al + hlf_sat</td>
+<td align="right">1.0117367</td>
+</tr>
+<tr class="odd">
+<td align="left">soil</td>
+<td align="left">g_flwr</td>
+<td align="left">cation + fe + mo + ph + rel_infil</td>
+<td align="right">1.0812958</td>
+</tr>
+<tr class="even">
+<td align="left">soil</td>
+<td align="left">g_head</td>
+<td align="left">al + as + rel_infil</td>
+<td align="right">1.6892416</td>
+</tr>
+<tr class="odd">
+<td align="left">soil</td>
+<td align="left">g_fruit</td>
+<td align="left">cu + sar</td>
+<td align="right">4.3056746</td>
 </tr>
 </tbody>
 </table>
