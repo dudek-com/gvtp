@@ -1,6 +1,7 @@
 ---
 title: "Habitat Characterization of Gaviota Tarplant (_Dienandra increscens ssp. villosa_)"
 author: "Benjamin D. Best, Jake Marcon, Kathleen Dayton"
+date: "`r format(Sys.time(), '%Y-%m-%d %H:%M')`"
 output:
   bookdown::html_document2:
     toc: yes
