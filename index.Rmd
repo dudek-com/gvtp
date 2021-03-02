@@ -22,7 +22,15 @@ source("setup.R")
 shelf(knitr)
 ```
 
-## Introduction
+```{r, results='asis'}
+alt_fmt <- ifelse(
+  opts_knit$get("rmarkdown.pandoc.to") == "docx",
+  "[Web html](https://dudek-com.github.io/gvtp/)",
+  "[Word docx](index.docx)")
+cat(glue("Alternate format: {alt_fmt}"))
+```
+
+# Introduction
 
 Developing renewable energy in an environmentally responsible manner requires mitigation of potentially sensitive species. Herein we characterize the habitat of the Gaviota tarplant ( _Dienandra increscens ssp. villosa_) for the Strauss Wind Energy Site in north Santa Barbara County area for the purposes of delineating habitat and informing potential enhancement and restoration efforts.
 
@@ -30,7 +38,7 @@ To describe habitat we built separate models associated with different stages of
 
 Given these environmental predictors various responses were used to build the statistical relationships based on the binary presence or absence and nine continuous responses related to abundance, percent cover, height, flowering and fruiting. We use the most sophisticated common methods for building species distribution models, namely _**MaxEnt**_ for binary presence/absence [@elithSpeciesDistributionModels2009; @fletcherPracticalGuideCombining2019; @phillipsOpeningBlackBox2017; @merowPracticalGuideMaxEnt2013; @elithStatisticalExplanationMaxEnt2011] and for continous responses _**RandomForest**_ [@evansModelingSpeciesDistribution2011; @kosickiGeneralisedAdditiveModels2020; @luanPredictivePerformancesRandom2020; @zhangImprovingPredictionRare2020].
 
-## Methods
+# Methods
 
 The observational data was limited to `r nrow(d)` observations nearly evenly weighted by presence (n=`r filter(d, g_pres==1) %>% nrow()`) and absence (n=`r filter(d, g_pres==0) %>% nrow()`) of Gaviota tarplant (GVTP; _Dienandra increscens ssp. villosa_). The environmental predictors were much more numerous (n=`r filter(d_cols, cat %in% c("biotic", "landscape", "soil")) %>% nrow()`; Table \@ref(tab:tab-predictors)) than response (n=`r filter(d_cols, cat == "_response") %>% nrow()`; (Table \@ref(tab:tab-responses)) terms, categorized by `r filter(d_cols, cat =="landscape") %>% nrow()` landscape, `r filter(d_cols, cat =="biotic") %>% nrow()` biotic and `r filter(d_cols, cat =="soil") %>% nrow()` soil predictor variables.
 
@@ -54,36 +62,40 @@ Given many more predictors (n=`r filter(d_cols, cat %in% c("biotic", "landscape"
 
 Once a reasonable subset of predictors were chosen per response, data were randomly split into training data (80%) to fit the model and test data (20%) to evaluate model performance. Model performance was based on Accuracy (higher score is better) for the binary response (presence) to compare Maxent against RandomForest models. To compare the continuous response models, a Normalized Root Mean Square Error (NRMSE; lower score is better) was used to allow for model selection between different response terms.
 
-To then select which models to employ for each category (landscape, biotic, soil) requires a value judgement. We propose that the presence response be used at the landscape level as a logical, simple first step in habitat assessment. For this type of binary response data Maxent has been demonstrated to be especially performant with few observations [@fletcherPracticalGuideCombining2019; @hijmansSpeciesDistributionModeling2013]. For the subsequent biotic and soil categories, a model based on continuous response could then inform on the reproductive potential of the species.
+To then select which models to employ for each category (landscape, biotic, soil) requires a value judgement. We propose that the presence response be used at the landscape level as a logical, simple first step in habitat assessment. For this type of binary response data Maxent has been demonstrated to be especially performant with few observations [@fletcherPracticalGuideCombining2019; @hijmansSpeciesDistributionModeling2013]. For the subsequent biotic and soil categories, a model based on continuous response could then inform on the reproductive potential of the species amongst within a set of landscape-derived sites.
 
-## Results
+# Results
 
 Of the many possible combinations between response, predictors and linear model variant (10 \* 81 \* 2 = `r 10 * 81 * 2`) a subset of significant, non-correlated predictors was matched for each response, based on binary (i.e. presence/absence; Table \@ref(tab:tab-models-binary)) or continous response (Table \@ref(tab:tab-models-continuous)).
 
 ```{r tab-models-binary}
 mdls <- read_csv(here("data/models.csv"), col_types = cols())
 mdls %>% 
-  filter(type == "binary") %>% 
+  filter(type == "binary") %>%
+  arrange(cat) %>%
   select(
     Category=cat, Response=resp, Predictors=predvars, 
     `Accuracy, RandomForest`=rf_Accuracy,
     `Accuracy, Maxent`=mx_Accuracy) %>% 
-  kable(caption="Models with binary biological response (GVTP presence/absence), assessed by Accuracy between modeling methods of Maxent and RandomForest.")
+  kable(caption="Models with binary biological response (GVTP presence/absence), assessed by highest Accuracy between modeling methods of Maxent and RandomForest.")
 ```
 
 ```{r tab-models-continuous}
 mdls <- read_csv(here("data/models.csv"), col_types = cols())
 mdls %>% 
   filter(type == "continous") %>% 
+  arrange(cat, desc(rf_NRMSE_sd)) %>% 
   select(
     Category=cat, Response=resp, Predictors=predvars, 
     `NRMSE, RandomForest`=rf_NRMSE_sd) %>% 
-  kable(caption="Models with continuous biological response of GVTP, assessed between RandomForest models with Normalized Root Mean Square Error (NRMSE).")
+  kable(caption="Models with continuous biological response of GVTP, assessed between RandomForest models with lowest Normalized Root Mean Square Error (NRMSE).")
 ```
+
+
 
 ...
 
-## Discussion
+# Discussion
 
 ...
 
