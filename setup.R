@@ -197,7 +197,7 @@ d_cols <- tibble(
   column_abbreviated = d_cols_abbr)
 #write_csv(d_cols, cols_csv)
 
-d_cols <- read_csv(cols_new_csv) %>% 
+d_cols <- read_csv(cols_new_csv, col_types = cols()) %>% 
   select(cat = category, new = column_new, old = column_original) %>% 
   arrange(cat, new)
 

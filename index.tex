@@ -1,0 +1,437 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Habitat Characterization of Gaviota Tarplant (Dienandra increscens ssp. villosa)},
+  pdfauthor={Benjamin D. Best, Jake Marcon, Kathleen Dayton},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{longtable,booktabs}
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+
+\title{Habitat Characterization of Gaviota Tarplant (\emph{Dienandra increscens ssp. villosa})}
+\author{Benjamin D. Best, Jake Marcon, Kathleen Dayton}
+\date{}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\hypertarget{introduction}{%
+\subsection{Introduction}\label{introduction}}
+
+Developing renewable energy in an environmentally responsible manner requires mitigation of potentially sensitive species. Herein we characterize the habitat of the Gaviota tarplant ( \emph{Dienandra increscens ssp. villosa}) for the Strauss Wind Energy Site in north Santa Barbara County area for the purposes of delineating habitat and informing potential enhancement and restoration efforts.
+
+To describe habitat we built separate models associated with different stages of identification associated with different environmental predictors: 1) \textbf{landscape} features describable based on terrain given a digital elevation model (DEM); 2) \textbf{biotic} factors around the plants related to species performance; and 3) \textbf{soil} characteristics derived from lab analysis. Each of these stages represents an increasingly detailed view requiring additional levels of effort. This phased approach is meant to reduce the costs in time and effort for facilitating future survey and restoration efforts.
+
+Given these environmental predictors various responses were used to build the statistical relationships based on the binary presence or absence and nine continuous responses related to abundance, percent cover, height, flowering and fruiting. We use the most sophisticated common methods for building species distribution models, namely \emph{\textbf{MaxEnt}} for binary presence/absence (Elith et al., 2011; Elith \& Leathwick, 2009; Fletcher et al., 2019; Merow et al., 2013; Phillips et al., 2017) and for continous responses \emph{\textbf{RandomForest}} (Evans et al., 2011; Kosicki, 2020; Luan et al., 2020; Zhang et al., 2020).
+
+\hypertarget{methods}{%
+\subsection{Methods}\label{methods}}
+
+The observational data was limited to 40 observations nearly evenly weighted by presence (n=21) and absence (n=19) of Gaviota tarplant (GVTP; \emph{Dienandra increscens ssp. villosa}). The environmental predictors were much more numerous (n=81; Table \ref{tab:tab-predictors}) than response (n=10; (Table \ref{tab:tab-responses}) terms, categorized by 19 landscape, 7 biotic and 55 soil predictor variables.
+
+\begin{table}
+
+\caption{\label{tab:tab-responses}Biological response variables with short and long names.}
+\centering
+\begin{tabular}[t]{l|l}
+\hline
+Response,short & Response,long\\
+\hline
+g\_cnt & gvtp\_count\\
+\hline
+g\_cov & gvtp\_cover\\
+\hline
+g\_flwr & gvtp\_percent\_flowering\\
+\hline
+g\_fruit & gvtp\_percent\_fruiting\\
+\hline
+g\_head & gvtp\_heads\\
+\hline
+g\_ht & gvtp\_height\_cm\_avg\\
+\hline
+g\_perf & gvtp\_performance\\
+\hline
+g\_pres & gvtp\_presence\\
+\hline
+g\_repro & gvtp\_reproductive\_potential\\
+\hline
+g\_veg & gvtp\_percent\_vegetative\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+
+\caption{\label{tab:tab-predictors}Environmental predictor variables by category with short and long names.}
+\centering
+\begin{tabular}[t]{l|l|l}
+\hline
+Category & Predictor,short & Predictor,long\\
+\hline
+biotic & hrb\_ht & herbheight\_avg\_cm\\
+\hline
+biotic & nativ & pct\_native\_cover\\
+\hline
+biotic & nativity & pct\_nativity\\
+\hline
+biotic & nonnativ & pct\_nonnative\_cover\\
+\hline
+biotic & plant & pct\_plant\_cover\\
+\hline
+biotic & wt\_g & dry\_wt\_g\\
+\hline
+biotic & wt\_lbs & dry\_wt\_lbs\_acre\\
+\hline
+landscape & asp & aspect\\
+\hline
+landscape & asp\_cir & aspect\_cir\\
+\hline
+landscape & asp\_cir\_deg & aspect\_cir\_deg\\
+\hline
+landscape & asp\_cir\_e & aspect\_cir\_east\\
+\hline
+landscape & asp\_cir\_n & aspect\_cir\_north\\
+\hline
+landscape & asp\_cir\_rad & aspect\_cir\_rad\\
+\hline
+landscape & asp\_deg & aspect\_deg\\
+\hline
+landscape & asp\_e & aspect\_east\\
+\hline
+landscape & asp\_n & aspect\_north\\
+\hline
+landscape & asp\_rad & aspect\_rad\\
+\hline
+landscape & bare & bare\_grnd\_cover\\
+\hline
+landscape & dstrb & soil\_dist\_cover\\
+\hline
+landscape & dstrb\_cir & soil\_dist\_cover\_cir\\
+\hline
+landscape & elev & elevation\\
+\hline
+landscape & slp\_deg & slope\_degrees\\
+\hline
+landscape & slp\_deg\_cir & slope\_degrees\_cir\\
+\hline
+landscape & slp\_pos & slope\_position\\
+\hline
+landscape & slp\_shp & slope\_shape\\
+\hline
+landscape & slp\_shp\_cir & slope\_shape\_cir\\
+\hline
+soil & ag & silver\\
+\hline
+soil & al & aluminum\\
+\hline
+soil & anion & anion sum\\
+\hline
+soil & as & arsenic\\
+\hline
+soil & b & boron\\
+\hline
+soil & b\_b & boron as B\\
+\hline
+soil & ba & barium\\
+\hline
+soil & ca & calcium\\
+\hline
+soil & ca\_mgl & calcium\_mgl\\
+\hline
+soil & ca\_mil & calcium\_millieq\\
+\hline
+soil & cation & cation sum\\
+\hline
+soil & cd & cadmium\\
+\hline
+soil & cl & chloride\\
+\hline
+soil & cl\_mgl & chloride\_mgl\\
+\hline
+soil & cl\_mil & chloride\_millieq\\
+\hline
+soil & co & cobalt\\
+\hline
+soil & cr & chromium\\
+\hline
+soil & cu & copper\\
+\hline
+soil & fe & iron\\
+\hline
+soil & gyps & est. gypsum requirement-lbs./1000 sq. ft.\\
+\hline
+soil & hg & mercury\\
+\hline
+soil & hlf\_sat & half saturation percentage\\
+\hline
+soil & k & potassium\\
+\hline
+soil & k\_mgl & potassium\_mgl\\
+\hline
+soil & k\_mil & potassium\_millieq\\
+\hline
+soil & li & lithium\\
+\hline
+soil & mg & magnesium\\
+\hline
+soil & mg\_mgl & magnesium\_mgl\\
+\hline
+soil & mg\_mil & magnesium\_millieq\\
+\hline
+soil & mn & manganese\\
+\hline
+soil & mo & molybdenum\\
+\hline
+soil & moist & moisture content of soil\\
+\hline
+soil & n & nitrate\\
+\hline
+soil & n\_mgl & nitrate as N\_mgl\\
+\hline
+soil & n\_mil & nitrate as N\_millieq\\
+\hline
+soil & na & sodium\\
+\hline
+soil & na\_mgl & sodium\_mgl\\
+\hline
+soil & na\_mil & sodium\_millieq\\
+\hline
+soil & ni & nickel\\
+\hline
+soil & organic & organic matter\\
+\hline
+soil & p & phosphorus\\
+\hline
+soil & p\_mgl & phosphorus as P\_mgl\\
+\hline
+soil & p\_mil & phosphorus as P\_millieq\\
+\hline
+soil & pb & lead\\
+\hline
+soil & ph & pH\\
+\hline
+soil & rel\_infil & relative infiltration rate\\
+\hline
+soil & salin & salinity\\
+\hline
+soil & sar & SAR\\
+\hline
+soil & se & selenium\\
+\hline
+soil & soil\_txtr & estimated soil texture\\
+\hline
+soil & sr & strontium\\
+\hline
+soil & su & sulfur\\
+\hline
+soil & su\_mgl & sulfate as S\_mgl\\
+\hline
+soil & su\_mil & sulfate as S\_millieq\\
+\hline
+soil & zn & zinc\\
+\hline
+\end{tabular}
+\end{table}
+
+Certain predictor and response terms were created or transformed to elicit meaningful relationships. The reproductive potential response was calculated as the number of GVTP plants multiplied by the average count of heads (\(gvtp\_reproductive\_potential = gvtp\_count * gvtp\_heads\)). Since aspect is a circular variable (0°--- north to 360°--- north), it was transformed to radians (\(aspect\_rad = aspect\_deg ∗ (2π/360)\)) to then create variables representing northern (\(aspect\_north =cos(aspect\_rad)\)) and eastern exposure (\(aspect\_east = sin(aspect\_rad)\)) (Kvasnes et al., 2018).
+
+Given many more predictors (n=81) than observations (n=40), the first challenge of this analysis was to winnow predictors down to a reasonable subset so as to avoid issues of overfitting and multicollinearity. To do this, we pre-selected predictors (\texttt{x}) across the suite of responses (\texttt{y}) based on individual relationships showing a significant relationship (p.value \textless= 0.05) for either a simple linear model (\texttt{y\ \textasciitilde{}\ x}) or one with an additional quadratic term (\texttt{y\ \textasciitilde{}\ x\ +\ x\^{}2}) to allow for non-linear niche response (i.e.~bell-shaped biological response around some optimal environmental predictor value). Predictors were further filtered for those not autocorrelated (Spearman's correlation \textless= 0.7) based on the individual model with the lowest Akaike information criterion (AIC) to produce the most parsimonious model without autocorrelated predictors.
+
+Once a reasonable subset of predictors were chosen per response, data were randomly split into training data (80\%) to fit the model and test data (20\%) to evaluate model performance. Model performance was based on Accuracy (higher score is better) for the binary response (presence) to compare Maxent against RandomForest models. To compare the continuous response models, a Normalized Root Mean Square Error (NRMSE; lower score is better) was used to allow for model selection between different response terms.
+
+To then select which models to employ for each category (landscape, biotic, soil) requires a value judgement. We propose that the presence response be used at the landscape level as a logical, simple first step in habitat assessment. For this type of binary response data Maxent has been demonstrated to be especially performant with few observations (Fletcher et al., 2019; Hijmans \& Elith, 2013). For the subsequent biotic and soil categories, a model based on continuous response could then inform on the reproductive potential of the species.
+
+\hypertarget{results}{%
+\subsection{Results}\label{results}}
+
+Of the many possible combinations between response, predictors and linear model variant (10 * 81 * 2 = 1620) a subset of significant, non-correlated predictors was matched for each response, based on binary (i.e.~presence/absence; Table \ref{tab:tab-models-binary}) or continous response (Table \ref{tab:tab-models-continuous}).
+
+\begin{table}
+
+\caption{\label{tab:tab-models-binary}Models with binary biological response (GVTP presence/absence), assessed by Accuracy between modeling methods of Maxent and RandomForest.}
+\centering
+\begin{tabular}[t]{l|l|l|r|r}
+\hline
+Category & Response & Predictors & Accuracy, RandomForest & Accuracy, Maxent\\
+\hline
+biotic & g\_pres & hrb\_ht + nonnativ + plant + wt\_g & 0.750 & 1.000\\
+\hline
+landscape & g\_pres & asp\_cir + bare + dstrb\_cir + slp\_deg\_cir + slp\_pos & 0.875 & 1.000\\
+\hline
+soil & g\_pres & as + ca\_mgl + fe + mo + ph + rel\_infil + soil\_txtr + sr + zn & 0.625 & 0.875\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+
+\caption{\label{tab:tab-models-continuous}Models with continuous biological response of GVTP, assessed between RandomForest models with Normalized Root Mean Square Error (NRMSE).}
+\centering
+\begin{tabular}[t]{l|l|l|r}
+\hline
+Category & Response & Predictors & NRMSE, RandomForest\\
+\hline
+biotic & g\_ht & hrb\_ht + nonnativ + plant + wt\_g & 0.5862016\\
+\hline
+biotic & g\_veg & asp\_cir + bare + dstrb\_cir + slp\_pos + slp\_deg\_cir & 0.8169411\\
+\hline
+biotic & g\_flwr & hrb\_ht + nonnativ + plant + wt\_g & 0.8355756\\
+\hline
+biotic & g\_cnt & plant + wt\_g & 0.8866365\\
+\hline
+biotic & g\_fruit & hrb\_ht + wt\_g & 1.0314135\\
+\hline
+biotic & g\_cov & nonnativ + plant & 1.0676078\\
+\hline
+biotic & g\_repro & plant & 7.0209514\\
+\hline
+landscape & g\_ht & asp + asp\_cir + dstrb\_cir + slp\_deg\_cir + slp\_pos & 0.8115228\\
+\hline
+landscape & g\_flwr & asp\_cir + dstrb + dstrb\_cir & 0.9162714\\
+\hline
+landscape & g\_cnt & dstrb\_cir + slp\_shp\_cir & 0.9995098\\
+\hline
+landscape & g\_cov & asp\_cir + bare + dstrb\_cir + slp\_pos + slp\_deg\_cir & 1.0019437\\
+\hline
+landscape & g\_fruit & asp\_cir + bare + dstrb\_cir + slp\_pos + slp\_deg\_cir & 1.0431574\\
+\hline
+landscape & g\_head & asp\_deg + slp\_pos + slp\_shp & 1.4346212\\
+\hline
+landscape & g\_repro & asp\_cir + bare + dstrb\_cir + slp\_pos + slp\_deg\_cir & 2.8045311\\
+\hline
+landscape & g\_veg & dstrb + dstrb\_cir + slp\_pos & 3.2193747\\
+\hline
+soil & g\_ht & as + ca + cation + fe + mo + ph + rel\_infil + zn & 0.7973356\\
+\hline
+soil & g\_veg & al + li + pb + rel\_infil & 0.9359612\\
+\hline
+soil & g\_repro & al & 0.9473671\\
+\hline
+soil & g\_cov & al & 0.9656032\\
+\hline
+soil & g\_cnt & al + hlf\_sat & 1.0117367\\
+\hline
+soil & g\_flwr & cation + fe + mo + ph + rel\_infil & 1.0812958\\
+\hline
+soil & g\_head & al + as + rel\_infil & 1.6892416\\
+\hline
+soil & g\_fruit & cu + sar & 4.3056746\\
+\hline
+\end{tabular}
+\end{table}
+
+\ldots{}
+
+\hypertarget{discussion}{%
+\subsection{Discussion}\label{discussion}}
+
+\ldots{}
+
+Although gvtp\_height\_cm\_avg (g\_ht) has the best performance, ecological interpretability favors gvtp\_percent\_vegetative (g\_veg).
+
+Results may also be packaged in such a way that data could be entered in the future at each categorical stage and predictions run within a few simple R functions. These could also be easily folded into a Shiny application with a user interface for uploading the CSVs to run the predictions.
+
+\hypertarget{references}{%
+\subsection*{References}\label{references}}
+\addcontentsline{toc}{subsection}{References}
+
+\hypertarget{refs}{}
+\leavevmode\hypertarget{ref-elithSpeciesDistributionModels2009}{}%
+Elith, J., \& Leathwick, J. R. (2009). Species Distribution Models: Ecological Explanation and Prediction Across Space and Time. \emph{Annual Review of Ecology, Evolution, and Systematics}, \emph{40}(1), 677--697. \url{https://doi.org/10.1146/annurev.ecolsys.110308.120159}
+
+\leavevmode\hypertarget{ref-elithStatisticalExplanationMaxEnt2011}{}%
+Elith, J., Phillips, S. J., Hastie, T., Dudík, M., Chee, Y. E., \& Yates, C. J. (2011). A statistical explanation of MaxEnt for ecologists. \emph{Diversity and Distributions}, \emph{17}(1), 43--57.
+
+\leavevmode\hypertarget{ref-evansModelingSpeciesDistribution2011}{}%
+Evans, J. S., Murphy, M. A., Holden, Z. A., \& Cushman, S. A. (2011). Modeling Species Distribution and Change Using Random Forest. In C. A. Drew, Y. F. Wiersma, \& F. Huettmann (Eds.), \emph{Predictive Species and Habitat Modeling in Landscape Ecology: Concepts and Applications} (pp. 139--159). Springer. \url{https://doi.org/10.1007/978-1-4419-7390-0_8}
+
+\leavevmode\hypertarget{ref-fletcherPracticalGuideCombining2019}{}%
+Fletcher, R. J., Hefley, T. J., Robertson, E. P., Zuckerberg, B., McCleery, R. A., \& Dorazio, R. M. (2019). A practical guide for combining data to model species distributions. \emph{Ecology}, \emph{100}(6), e02710. \url{https://doi.org/10.1002/ecy.2710}
+
+\leavevmode\hypertarget{ref-hijmansSpeciesDistributionModeling2013}{}%
+Hijmans, R. J., \& Elith, J. (2013). Species distribution modeling with R. \emph{R Package Version 0.8-11}.
+
+\leavevmode\hypertarget{ref-kosickiGeneralisedAdditiveModels2020}{}%
+Kosicki, J. Z. (2020). Generalised Additive Models and Random Forest Approach as effective methods for predictive species density and functional species richness. \emph{Environmental and Ecological Statistics}, \emph{27}(2), 273--292. \url{https://doi.org/10.1007/s10651-020-00445-5}
+
+\leavevmode\hypertarget{ref-kvasnesQuantifyingSuitableLate2018}{}%
+Kvasnes, M. A. J., Pedersen, H. C., \& Nilsen, E. B. (2018). Quantifying suitable late summer brood habitats for willow ptarmigan in Norway. \emph{BMC Ecology}, \emph{18}(1). \url{https://doi.org/10.1186/s12898-018-0196-6}
+
+\leavevmode\hypertarget{ref-luanPredictivePerformancesRandom2020}{}%
+Luan, J., Zhang, C., Xu, B., Xue, Y., \& Ren, Y. (2020). The predictive performances of random forest models with limited sample size and different species traits. \emph{Fisheries Research}, \emph{227}, 105534. \url{https://doi.org/10.1016/j.fishres.2020.105534}
+
+\leavevmode\hypertarget{ref-merowPracticalGuideMaxEnt2013}{}%
+Merow, C., Smith, M. J., \& Silander, J. A. (2013). A practical guide to MaxEnt for modeling species' distributions: What it does, and why inputs and settings matter. \emph{Ecography}, \emph{36}(10), 1058--1069. \url{https://doi.org/10.1111/j.1600-0587.2013.07872.x}
+
+\leavevmode\hypertarget{ref-phillipsOpeningBlackBox2017}{}%
+Phillips, S. J., Anderson, R. P., Dudík, M., Schapire, R. E., \& Blair, M. E. (2017). Opening the black box: An open-source release of Maxent. \emph{Ecography}, \emph{40}(7), 887--893. \url{https://doi.org/10.1111/ecog.03049}
+
+\leavevmode\hypertarget{ref-zhangImprovingPredictionRare2020}{}%
+Zhang, C., Chen, Y., Xu, B., Xue, Y., \& Ren, Y. (2020). Improving prediction of rare species' distribution from community data. \emph{Scientific Reports}, \emph{10}(1), 12230. \url{https://doi.org/10.1038/s41598-020-69157-x}
+
+\end{document}

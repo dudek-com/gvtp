@@ -253,7 +253,7 @@ div.tocify {
 </div>
 <div id="methods" class="section level2">
 <h2><span class="header-section-number">0.2</span> Methods</h2>
-<p>The observational data was limited to 40 observations nearly evenly weighted by presence (n=21) and absence (n=19) of Gaviota tarplant (GVTP; <em>Dienandra increscens ssp. villosa</em>). The environmental predictors were much more numerous (n=81; Table <a href="#tab:tab-predictors">2</a>) than response (n=10; (Table <a href="#tab:tab-responses">1</a>) terms, categorized by 19 landscape, 7 biotic and 55 soil predictor variables.</p>
+<p>The observational data was limited to 40 observations nearly evenly weighted by presence (n=21) and absence (n=19) of Gaviota tarplant (GVTP; <em>Dienandra increscens ssp. villosa</em>). The environmental predictors were much more numerous (n=81; Table <a href="#tab:tab-predictors">2</a>) than response (n=10; (Table <a href="#tab:tab-response"><strong>??</strong></a>) terms, categorized by 19 landscape, 7 biotic and 55 soil predictor variables.</p>
 <table>
 <caption><span id="tab:tab-responses">Table 1: </span>Biological response variables with short and long names.</caption>
 <thead>
@@ -722,220 +722,17 @@ div.tocify {
 </tr>
 </tbody>
 </table>
-<p>Certain predictor and response terms were created or transformed to elicit meaningful relationships. The reproductive potential response was calculated as the number of GVTP plants multiplied by the average count of heads (<span class="math inline">\(gvtp\_reproductive\_potential = gvtp\_count * gvtp\_heads\)</span>). Since aspect is a circular variable (0°— north to 360°— north), it was transformed to radians (<span class="math inline">\(aspect\_rad = aspect\_deg ∗ (2π/360)\)</span>) to then create variables representing northern (<span class="math inline">\(aspect\_north =cos(aspect\_rad)\)</span>) and eastern exposure (<span class="math inline">\(aspect\_east = sin(aspect\_rad)\)</span>) <span class="citation">(Kvasnes et al., 2018)</span>.</p>
 <p>Given many more predictors (n=81) than observations (n=40), the first challenge of this analysis was to winnow predictors down to a reasonable subset so as to avoid issues of overfitting and multicollinearity. To do this, we pre-selected predictors (<code>x</code>) across the suite of responses (<code>y</code>) based on individual relationships showing a significant relationship (p.value &lt;= 0.05) for either a simple linear model (<code>y ~ x</code>) or one with an additional quadratic term (<code>y ~ x + x^2</code>) to allow for non-linear niche response (i.e. bell-shaped biological response around some optimal environmental predictor value). Predictors were further filtered for those not autocorrelated (Spearman’s correlation &lt;= 0.7) based on the individual model with the lowest Akaike information criterion (AIC) to produce the most parsimonious model without autocorrelated predictors.</p>
 <p>Once a reasonable subset of predictors were chosen per response, data were randomly split into training data (80%) to fit the model and test data (20%) to evaluate model performance. Model performance was based on Accuracy (higher score is better) for the binary response (presence) to compare Maxent against RandomForest models. To compare the continuous response models, a Normalized Root Mean Square Error (NRMSE; lower score is better) was used to allow for model selection between different response terms.</p>
 <p>To then select which models to employ for each category (landscape, biotic, soil) requires a value judgement. We propose that the presence response be used at the landscape level as a logical, simple first step in habitat assessment. For this type of binary response data Maxent has been demonstrated to be especially performant with few observations <span class="citation">(Fletcher et al., 2019; Hijmans &amp; Elith, 2013)</span>. For the subsequent biotic and soil categories, a model based on continuous response could then inform on the reproductive potential of the species.</p>
 </div>
 <div id="results" class="section level2">
 <h2><span class="header-section-number">0.3</span> Results</h2>
-<p>Of the many possible combinations between response, predictors and linear model variant (10 * 81 * 2 = 1620) a subset of significant, non-correlated predictors was matched for each response, based on binary (i.e. presence/absence; Table <a href="#tab:tab-models-binary">3</a>) or continous response (Table <a href="#tab:tab-models-continuous">4</a>).</p>
-<table>
-<caption><span id="tab:tab-models-binary">Table 3: </span>Models with binary biological response (GVTP presence/absence), assessed by Accuracy between modeling methods of Maxent and RandomForest.</caption>
-<colgroup>
-<col width="8%" />
-<col width="7%" />
-<col width="50%" />
-<col width="19%" />
-<col width="14%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Category</th>
-<th align="left">Response</th>
-<th align="left">Predictors</th>
-<th align="right">Accuracy, RandomForest</th>
-<th align="right">Accuracy, Maxent</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">biotic</td>
-<td align="left">g_pres</td>
-<td align="left">hrb_ht + nonnativ + plant + wt_g</td>
-<td align="right">0.750</td>
-<td align="right">1.000</td>
-</tr>
-<tr class="even">
-<td align="left">landscape</td>
-<td align="left">g_pres</td>
-<td align="left">asp_cir + bare + dstrb_cir + slp_deg_cir + slp_pos</td>
-<td align="right">0.875</td>
-<td align="right">1.000</td>
-</tr>
-<tr class="odd">
-<td align="left">soil</td>
-<td align="left">g_pres</td>
-<td align="left">as + ca_mgl + fe + mo + ph + rel_infil + soil_txtr + sr + zn</td>
-<td align="right">0.625</td>
-<td align="right">0.875</td>
-</tr>
-</tbody>
-</table>
-<table>
-<caption><span id="tab:tab-models-continuous">Table 4: </span>Models with continuous biological response of GVTP, assessed between RandomForest models with Normalized Root Mean Square Error (NRMSE).</caption>
-<colgroup>
-<col width="11%" />
-<col width="10%" />
-<col width="56%" />
-<col width="22%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Category</th>
-<th align="left">Response</th>
-<th align="left">Predictors</th>
-<th align="right">NRMSE, RandomForest</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">biotic</td>
-<td align="left">g_ht</td>
-<td align="left">hrb_ht + nonnativ + plant + wt_g</td>
-<td align="right">0.5862016</td>
-</tr>
-<tr class="even">
-<td align="left">biotic</td>
-<td align="left">g_veg</td>
-<td align="left">asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir</td>
-<td align="right">0.8169411</td>
-</tr>
-<tr class="odd">
-<td align="left">biotic</td>
-<td align="left">g_flwr</td>
-<td align="left">hrb_ht + nonnativ + plant + wt_g</td>
-<td align="right">0.8355756</td>
-</tr>
-<tr class="even">
-<td align="left">biotic</td>
-<td align="left">g_cnt</td>
-<td align="left">plant + wt_g</td>
-<td align="right">0.8866365</td>
-</tr>
-<tr class="odd">
-<td align="left">biotic</td>
-<td align="left">g_fruit</td>
-<td align="left">hrb_ht + wt_g</td>
-<td align="right">1.0314135</td>
-</tr>
-<tr class="even">
-<td align="left">biotic</td>
-<td align="left">g_cov</td>
-<td align="left">nonnativ + plant</td>
-<td align="right">1.0676078</td>
-</tr>
-<tr class="odd">
-<td align="left">biotic</td>
-<td align="left">g_repro</td>
-<td align="left">plant</td>
-<td align="right">7.0209514</td>
-</tr>
-<tr class="even">
-<td align="left">landscape</td>
-<td align="left">g_ht</td>
-<td align="left">asp + asp_cir + dstrb_cir + slp_deg_cir + slp_pos</td>
-<td align="right">0.8115228</td>
-</tr>
-<tr class="odd">
-<td align="left">landscape</td>
-<td align="left">g_flwr</td>
-<td align="left">asp_cir + dstrb + dstrb_cir</td>
-<td align="right">0.9162714</td>
-</tr>
-<tr class="even">
-<td align="left">landscape</td>
-<td align="left">g_cnt</td>
-<td align="left">dstrb_cir + slp_shp_cir</td>
-<td align="right">0.9995098</td>
-</tr>
-<tr class="odd">
-<td align="left">landscape</td>
-<td align="left">g_cov</td>
-<td align="left">asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir</td>
-<td align="right">1.0019437</td>
-</tr>
-<tr class="even">
-<td align="left">landscape</td>
-<td align="left">g_fruit</td>
-<td align="left">asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir</td>
-<td align="right">1.0431574</td>
-</tr>
-<tr class="odd">
-<td align="left">landscape</td>
-<td align="left">g_head</td>
-<td align="left">asp_deg + slp_pos + slp_shp</td>
-<td align="right">1.4346212</td>
-</tr>
-<tr class="even">
-<td align="left">landscape</td>
-<td align="left">g_repro</td>
-<td align="left">asp_cir + bare + dstrb_cir + slp_pos + slp_deg_cir</td>
-<td align="right">2.8045311</td>
-</tr>
-<tr class="odd">
-<td align="left">landscape</td>
-<td align="left">g_veg</td>
-<td align="left">dstrb + dstrb_cir + slp_pos</td>
-<td align="right">3.2193747</td>
-</tr>
-<tr class="even">
-<td align="left">soil</td>
-<td align="left">g_ht</td>
-<td align="left">as + ca + cation + fe + mo + ph + rel_infil + zn</td>
-<td align="right">0.7973356</td>
-</tr>
-<tr class="odd">
-<td align="left">soil</td>
-<td align="left">g_veg</td>
-<td align="left">al + li + pb + rel_infil</td>
-<td align="right">0.9359612</td>
-</tr>
-<tr class="even">
-<td align="left">soil</td>
-<td align="left">g_repro</td>
-<td align="left">al</td>
-<td align="right">0.9473671</td>
-</tr>
-<tr class="odd">
-<td align="left">soil</td>
-<td align="left">g_cov</td>
-<td align="left">al</td>
-<td align="right">0.9656032</td>
-</tr>
-<tr class="even">
-<td align="left">soil</td>
-<td align="left">g_cnt</td>
-<td align="left">al + hlf_sat</td>
-<td align="right">1.0117367</td>
-</tr>
-<tr class="odd">
-<td align="left">soil</td>
-<td align="left">g_flwr</td>
-<td align="left">cation + fe + mo + ph + rel_infil</td>
-<td align="right">1.0812958</td>
-</tr>
-<tr class="even">
-<td align="left">soil</td>
-<td align="left">g_head</td>
-<td align="left">al + as + rel_infil</td>
-<td align="right">1.6892416</td>
-</tr>
-<tr class="odd">
-<td align="left">soil</td>
-<td align="left">g_fruit</td>
-<td align="left">cu + sar</td>
-<td align="right">4.3056746</td>
-</tr>
-</tbody>
-</table>
-<p>…</p>
 </div>
 <div id="discussion" class="section level2">
 <h2><span class="header-section-number">0.4</span> Discussion</h2>
-<p>…</p>
-<p>Although gvtp_height_cm_avg (g_ht) has the best performance, ecological interpretability favors gvtp_percent_vegetative (g_veg).</p>
-<p>Results may also be packaged in such a way that data could be entered in the future at each categorical stage and predictions run within a few simple R functions. These could also be easily folded into a Shiny application with a user interface for uploading the CSVs to run the predictions.</p>
+<p>Although gvtp_height_cm_avg (g_ht) has the best performance, ecological interpretability might favor gvtp_percent_vegetative (g_veg).</p>
+<p>I could also package this in such a way that data could be entered in the future at each categorical stage and predictions run within a few simple R functions. These could also be easily folded into a Shiny application with a user interface for uploading the CSVs to run the predictions.</p>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2>References</h2>
@@ -957,9 +754,6 @@ div.tocify {
 </div>
 <div id="ref-kosickiGeneralisedAdditiveModels2020">
 <p>Kosicki, J. Z. (2020). Generalised Additive Models and Random Forest Approach as effective methods for predictive species density and functional species richness. <em>Environmental and Ecological Statistics</em>, <em>27</em>(2), 273–292. <a href="https://doi.org/10.1007/s10651-020-00445-5">https://doi.org/10.1007/s10651-020-00445-5</a></p>
-</div>
-<div id="ref-kvasnesQuantifyingSuitableLate2018">
-<p>Kvasnes, M. A. J., Pedersen, H. C., &amp; Nilsen, E. B. (2018). Quantifying suitable late summer brood habitats for willow ptarmigan in Norway. <em>BMC Ecology</em>, <em>18</em>(1). <a href="https://doi.org/10.1186/s12898-018-0196-6">https://doi.org/10.1186/s12898-018-0196-6</a></p>
 </div>
 <div id="ref-luanPredictivePerformancesRandom2020">
 <p>Luan, J., Zhang, C., Xu, B., Xue, Y., &amp; Ren, Y. (2020). The predictive performances of random forest models with limited sample size and different species traits. <em>Fisheries Research</em>, <em>227</em>, 105534. <a href="https://doi.org/10.1016/j.fishres.2020.105534">https://doi.org/10.1016/j.fishres.2020.105534</a></p>

@@ -1,835 +1,95 @@
 ---
-title: "GVTP"
+title: "Habitat Characterization of Gaviota Tarplant (_Dienandra increscens ssp. villosa_)"
+author: "Benjamin D. Best, Jake Marcon, Kathleen Dayton"
 output:
-  html_document:
-    toc: true
+  bookdown::html_document2:
+    toc: yes
     toc_depth: 3
-    toc_float: true
-    code_folding: hide
+    toc_float: yes
     lib_dir: index_libs
-    self_contained: false
-editor_options: 
+    self_contained: no
+  bookdown::word_document2: default
+editor_options:
   chunk_output_type: console
-bibliography: ["dudek_gvtp.bib"]
+bibliography: dudek_gvtp.bib
 csl: dudek_gvtp_apa.csl
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = T, warning = F, message = F, eval = F)
-```
-
-```{r, eval = T}
+knitr::opts_chunk$set(echo = F, warning = F, message = F, eval = T)
 source("setup.R")
+shelf(knitr)
 ```
 
-## Skim
+## Introduction
 
-```{r, eval = T}
-# skim sheets
-h3("plot")
-skim(plot)
-h3("spp")
-skim(spp)
-h3("soil")
-skim(soil)
-h3("veg")
-skim(veg)
-h3("herbht")
-skim(herbht)
-h3("gvtpht")
-skim(gvtpht)
-h3("rdm")
-skim(rdm)
+Developing renewable energy in an environmentally responsible manner requires mitigation of potentially sensitive species. Herein we characterize the habitat of the Gaviota tarplant ( _Dienandra increscens ssp. villosa_) for the Strauss Wind Energy Site in north Santa Barbara County area for the purposes of delineating habitat and informing potential enhancement and restoration efforts.
+
+To describe habitat we built separate models associated with different stages of identification associated with different environmental predictors: 1) **landscape** features describable based on terrain given a digital elevation model (DEM); 2) **biotic** factors around the plants related to species performance; and 3) **soil** characteristics derived from lab analysis. Each of these stages represents an increasingly detailed view requiring additional levels of effort. This phased approach is meant to reduce the costs in time and effort for facilitating future survey and restoration efforts.
+
+Given these environmental predictors various responses were used to build the statistical relationships based on the binary presence or absence and nine continuous responses related to abundance, percent cover, height, flowering and fruiting. We use the most sophisticated common methods for building species distribution models, namely _**MaxEnt**_ for binary presence/absence [@elithSpeciesDistributionModels2009; @fletcherPracticalGuideCombining2019; @phillipsOpeningBlackBox2017; @merowPracticalGuideMaxEnt2013; @elithStatisticalExplanationMaxEnt2011] and for continous responses _**RandomForest**_ [@evansModelingSpeciesDistribution2011; @kosickiGeneralisedAdditiveModels2020; @luanPredictivePerformancesRandom2020; @zhangImprovingPredictionRare2020].
+
+## Methods
+
+The observational data was limited to `r nrow(d)` observations nearly evenly weighted by presence (n=`r filter(d, g_pres==1) %>% nrow()`) and absence (n=`r filter(d, g_pres==0) %>% nrow()`) of Gaviota tarplant (GVTP; _Dienandra increscens ssp. villosa_). The environmental predictors were much more numerous (n=`r filter(d_cols, cat %in% c("biotic", "landscape", "soil")) %>% nrow()`; Table \@ref(tab:tab-predictors)) than response (n=`r filter(d_cols, cat == "_response") %>% nrow()`; (Table \@ref(tab:tab-responses)) terms, categorized by `r filter(d_cols, cat =="landscape") %>% nrow()` landscape, `r filter(d_cols, cat =="biotic") %>% nrow()` biotic and `r filter(d_cols, cat =="soil") %>% nrow()` soil predictor variables.
+
+```{r tab-responses}
+d_cols %>% 
+  filter(cat == "_response") %>% 
+  select(`Response,short`=new, `Response,long`=old) %>% 
+  kable(caption="Biological response variables with short and long names.")
 ```
 
-## broom gam
-
-- https://r4ds.had.co.nz/many-models.html
-- https://mran.microsoft.com/snapshot/2016-06-20/web/packages/GGally/vignettes/ggcoef.html
-- [demonstration of Tibble -> Nest -> Model -> Plot -> TrelliscopeJS](https://gist.github.com/bbest/d6cb72e2a000fc50bf7e10196000ed5a)
-
-```{r broom all model, eval=F}
-library(broom)
-
-cols_pred_num <- d_all %>% 
-  select(all_of(cols_pred)) %>% 
-  select_if(is.numeric) %>% 
-  names()
-cols_pred_fac <- d_all %>% 
-  select(all_of(cols_pred)) %>% 
-  select_if(is.factor) %>% 
-  names()
-
-col_resp <- "g_cnt"
-
-terms_num <- paste(cols_pred_num, collapse = ") + s(")
-terms_fac <- paste(cols_pred_fac, collapse = " + ")
-
-frmla <- as.formula(glue("{col_resp} ~ s({terms_num}, k=5) + {terms_fac}"))
-
-mdl <- gam(frmla, data = d_all)
-
-terms <- paste(cols_pred, collapse = " + ")
-frmla <- as.formula(glue("{col_resp} ~ {terms}"))
-
-mdl <- lm(frmla, data = d_all)
-mdl <- tidy(mdl)
-View(mdl)
-# doh! too many predictor terms
+```{r tab-predictors}
+d_cols %>% 
+  filter(cat %in% c("landscape", "biotic", "soil")) %>% 
+  select(Category=cat, `Predictor,short`=new, `Predictor,long`=old) %>% 
+  kable(caption="Environmental predictor variables by category with short and long names.")
 ```
 
+Certain predictor and response terms were created or transformed to elicit meaningful relationships. The reproductive potential response was calculated as the number of GVTP plants multiplied by the average count of heads ($gvtp\_reproductive\_potential = gvtp\_count * gvtp\_heads$). Since aspect is a circular variable (0°— north to 360°— north), it was  transformed to radians ($aspect\_rad = aspect\_deg ∗ (2π/360)$) to then create variables representing northern ($aspect\_north =cos(aspect\_rad)$) and eastern exposure ($aspect\_east = sin(aspect\_rad)$) [@kvasnesQuantifyingSuitableLate2018].
 
-## Data
+Given many more predictors (n=`r filter(d_cols, cat %in% c("biotic", "landscape", "soil")) %>% nrow()`) than observations (n=`r nrow(d)`), the first challenge of this analysis was to winnow predictors down to a reasonable subset so as to avoid issues of overfitting and multicollinearity. To do this, we pre-selected predictors (`x`) across the suite of responses (`y`) based on individual relationships showing a significant relationship (p.value <= 0.05) for either a simple linear model (`y ~ x`) or one with an additional quadratic term (`y ~ x + x^2`) to allow for non-linear niche response (i.e. bell-shaped biological response around some optimal environmental predictor value). Predictors were further filtered for those not autocorrelated (Spearman's correlation <= 0.7) based on the individual model with the lowest Akaike information criterion (AIC) to produce the most parsimonious model without autocorrelated predictors. 
 
-```{r, eval = T}
-datatable(d_cols)
+Once a reasonable subset of predictors were chosen per response, data were randomly split into training data (80%) to fit the model and test data (20%) to evaluate model performance. Model performance was based on Accuracy (higher score is better) for the binary response (presence) to compare Maxent against RandomForest models. To compare the continuous response models, a Normalized Root Mean Square Error (NRMSE; lower score is better) was used to allow for model selection between different response terms.
 
-datatable(d)
-```
+To then select which models to employ for each category (landscape, biotic, soil) requires a value judgement. We propose that the presence response be used at the landscape level as a logical, simple first step in habitat assessment. For this type of binary response data Maxent has been demonstrated to be especially performant with few observations [@fletcherPracticalGuideCombining2019; @hijmansSpeciesDistributionModeling2013]. For the subsequent biotic and soil categories, a model based on continuous response could then inform on the reproductive potential of the species.
 
-### Plot
+## Results
 
-```{r}
-d_cnt_lng  <- get_resp_pred_num_long(d_all, "g_cnt", cols_pred)
-d_pres_lng <- get_resp_pred_num_long(d_all, "g_pres", cols_pred)
+Of the many possible combinations between response, predictors and linear model variant (10 \* 81 \* 2 = `r 10 * 81 * 2`) a subset of significant, non-correlated predictors was matched for each response, based on binary (i.e. presence/absence; Table \@ref(tab:tab-models-binary)) or continous response (Table \@ref(tab:tab-models-continuous)).
 
-d_pres_ttest <- get_var_ttest(d_pres_lng, "g_pres")
-d_cnt_ttest  <- get_var_ttest(d_cnt_lng , "g_cnt")
-
-datatable(d_pres_ttest)
-datatable(d_cnt_ttest)
-```
-
-## model selection
-
-* [5.5 Selecting predictors | Forecasting: Principles and Practice](https://otexts.com/fpp2/selecting-predictors.html)
-* [Model Specification: Choosing the Correct Regression Model - Statistics By Jim](https://statisticsbyjim.com/regression/model-specification-variable-selection/)
-
-```{r}
-pred_lm_p05_csv <- here("data/pred_lm_p05.csv")
-
-get_var_data <- function(resp, pred){
-  d_all %>% 
-    #select(plot, starts_with("g_"), all_of(v)) # %>% 
-    select(plot, all_of(c(resp, pred))) # %>% 
-    # rename_with(function(x) ifelse(x==v, "val", x))
-    }
-
-D <- tibble(
-  var = cols_pred) %>% 
-  mutate(
-    data = map(var, get_var_data))
-
-m = list()
-for (col_resp in cols_resp){ # col_resp = cols_resp[1]
-  # message(glue("col_resp: {col_resp}"))
-
-  # resp-pred data
-  m_resp <- tibble(
-    resp  = col_resp,
-    pred  = cols_pred) %>% 
-    mutate(
-      data = map2(
-        resp, pred, function(resp, pred){
-          d_all %>% 
-            select(plot, all_of(c(resp, pred))) }),
-      type = map2_chr(
-        data, pred, function(x,y) 
-          pull(x, all_of(y)) %>% class()))
-  
-  # lm model specifications
-  m_resp <- bind_rows(
-    m_resp %>% 
-      mutate(
-        mdl = "lm1",
-        f   = glue("{resp} ~ {pred}")),
-    m_resp %>% 
-      filter(type != "factor") %>% 
-      mutate(
-        mdl = "lm2",
-        f   = glue("{resp} ~ {pred} + I({pred}^2)")))
-
-  # all models    
-  m_resp <- m_resp %>% 
-    mutate(
-      lm  = pmap(
-        list(data=data, f=f), 
-        function(data, f){
-          lm(as.formula(f), data=data) }),
-      df = map(lm, glance)) %>% 
-    unnest(df)
-  lapply(m_resp, class)
-  
-  m[[col_resp]] <- m_resp
-}
-m <- bind_rows(m)
-
-# mA <- m
-
-message(glue("Total # of models lm (y~x) & lm2 (y~x+x^2; not factor): {nrow(m)}")) # 1510
-
-m <- m %>% 
-  filter(p.value <= 0.05) %>% 
-  arrange(resp, p.value, pred, type)
-
-# mB <- m
-
-message(glue("Filtered # of models p ≤ 0.05: {nrow(m)}")) # 246
-
-# archive models
-m %>% 
+```{r tab-models-binary}
+mdls <- read_csv(here("data/models.csv"), col_types = cols())
+mdls %>% 
+  filter(type == "binary") %>% 
   select(
-    resp, pred, type, mdl, f, 
-    r.squared, adj.r.squared, sigma, statistic, p.value, 
-    df, logLik, AIC, BIC, deviance, df.residual, nobs) %>% 
-  write_csv(pred_lm_p05_csv)
-
-
-m <- m %>% 
-  mutate(
-    plot = pmap(
-      list(data=data, resp=resp, pred=pred, type=type, mdl=mdl),
-      function(data, resp, pred, type, mdl){
-        g <- ggplot(data, aes_string(x=pred, y=resp))
-        if (mdl == "lm2"){
-          g + 
-            geom_count() +
-            stat_smooth(method = "lm", formula = y ~ x + I(x^2))
-        } else {
-          if (type=="factor"){
-            g + 
-              geom_boxplot() + 
-              geom_smooth(formula = y ~ x, method = "lm", se=FALSE, col = "blue")
-          } else {
-            g +
-              geom_count() +
-              stat_smooth(method = "lm", formula = y ~ x)
-          }
-        }}))
-# mC <- m
-
-# terms
-m_terms <- m %>% 
-  select(resp, pred, data, type, mdl, f, lm) %>% 
-  mutate(    
-    df = map(lm, tidy)) %>% 
-  unnest(df)
-m_terms %>% 
-  select(-data, -lm) %>% 
-  write_csv("data/pred_lm_p05_terms.csv")
-
-# save plots to file
-pwalk(
-  m,
-  function(resp, pred, type, mdl, plot, ...){
-    f_png <- glue("figures/pred_lm/{resp}.{pred}.{str_sub('type', 1, 3)}.{mdl}.png")
-    png(f_png)
-    print(plot)
-    dev.off() })
+    Category=cat, Response=resp, Predictors=predvars, 
+    `Accuracy, RandomForest`=rf_Accuracy,
+    `Accuracy, Maxent`=mx_Accuracy) %>% 
+  kable(caption="Models with binary biological response (GVTP presence/absence), assessed by Accuracy between modeling methods of Maxent and RandomForest.")
 ```
 
-TODO:
-- weed out redundant vars:
-  - g_prod == g_repro, except plot 9: 0	vs 1674.4 (g_repro)
-  - wt_g == wt_lbs
-- try log(g_repro)
-- pick lowest p.value from (resp,pred) across {mdl}
-- show terms in Rmd: ## {resp}, ### {pred} ({type}, {mdl})
-- remove autocorrelated vars by resp.
-- create habitat suitability for g_cnt
-- create habitat suitability for g_cnt by category: landscape, biotic, soil
-
-
-## log(g_repro)
-
-```{r}
-hist(d_all$g_repro)
-hist(log(d_all$g_repro + 0.1))
-hist(log(d_all$g_repro + 0.001))
+```{r tab-models-continuous}
+mdls <- read_csv(here("data/models.csv"), col_types = cols())
+mdls %>% 
+  filter(type == "continous") %>% 
+  select(
+    Category=cat, Response=resp, Predictors=predvars, 
+    `NRMSE, RandomForest`=rf_NRMSE_sd) %>% 
+  kable(caption="Models with continuous biological response of GVTP, assessed between RandomForest models with Normalized Root Mean Square Error (NRMSE).")
 ```
 
+...
 
-```{r}
-library(mgcViz)
-b <- getViz(gam_cnt)
-plot(b, select = 1)
-print.plotGam(b)
+## Discussion
 
+...
 
-m %>% 
-  filter(resp == "g_cnt", var == "plant") %>% 
-  pull(data) %>% 
-  .[[1]] %>% 
-  select(g_cnt, plant = val) %>% 
-  ggplot(aes(x = plant, y = g_cnt)) + 
-  geom_point() +
-  stat_smooth(method = "lm", col = "red")
+Although gvtp_height_cm_avg (g_ht) has the best performance, ecological interpretability favors gvtp_percent_vegetative (g_veg).
 
-
-g_cnt	plant
-
-o <- plot( sm(b, 1) ) + 
-  l_fitLine(colour = "red") + l_rug(mapping = aes(x=x, y=y), alpha = 0.8) +
-    l_ciLine(mul = 5, colour = "blue", linetype = 2) + 
-    l_points(shape = 19, size = 1, alpha = 0.1) + theme_classic()
-print(o)
-
-print(plot(b, allTerms = T), pages = 1) # Calls print.plotGam()
-
-D <- D %>% 
-  mutate(
-    
-  )
-    
-d_gam <- tibble(
-  var = cols_pred) %>% 
-  mutate(
-    cnt_mdl = map(var, function(var){
-      if (is.numeric(d_all)){
-        frmla <- glue("g_cnt ~ s({var})")
-      } else {
-        frmla <- glue("g_cnt ~ {var}")
-      }
-      message(frmla)
-      gam(as.formula(frmla), data = d_all)
-    }))
-
-d_gam <- d_gam %>% 
-  mutate(
-    cnt_gcv  = map_dbl(cnt_mdl, function(x) x$gcv.ubre.dev))
-
-
-mdl <- gam(g_cnt ~ s(hrb_ht), data = d_all)
-plot(g_cnt ~ hrb_ht, data = d_all)
-plot(mdl, pages=1, residuals=T, all.terms=T, shade=T, shade.col=2)
-termplot(mdl, partial.resid=T, se=T, main=T)
-
-d_gam <- d_gam %>% 
-  arrange(cnt_gcv) %>% 
-  mutate(
-    cnt_plot = map(cnt_mdl, function(x){
-      plot(x, pages=1, residuals=T, all.terms=T, shade=T, shade.col=2)
-      #termplot(x, partial.resid=T, se=T, main=T)
-      }))
-
-d_gam %>% 
-  select(var, cnt_gcv) %>% 
-  arrange(cnt_gcv) %>% 
-  View()
-
-  mdl <- gam(g_cnt ~ asp, data = d_all)
-  plot(mdl, pages=1, residuals=T, all.terms=T, shade=T, shade.col=2)
-  mdl$gcv.ubre.dev
-
-
-d_all %>% 
-  pivot_longer(
-    select(-plot, -starts_with("g_")),
-    names_to  = "var",
-    values_to = "value")
-  group_by(var) %>% 
-  nest()
-  select(g_cnt, )
-
-mdl <- gam(g_cnt ~ s(al), data = d_all)
-plot(mdl, pages=1,residuals=T, all.terms=T, shade=T, shade.col=2)
-
-mdl$gcv.ubre.dev
-
-mdl <- gam(g_pres ~ s(al), data = d_all)
-plot(mdl, pages=1,residuals=T, all.terms=T, shade=T, shade.col=2)
-mdl
-
-
-?plot.gam
-```
-
-```{r facet hist}
-ggplot(d_pres_num_lng, aes(x=value, fill=g_pres, color=g_pres)) +
-  #facet_wrap(facets = vars(variable)) +
-  geom_density(alpha=0.2) +
-  geom_histogram(
-    aes(y=..density..), position="identity", alpha=0.5) +
-  # facet_trelliscope() not working w/ other data, eg geom_vline(avg)
-  #   https://github.com/hafen/trelliscopejs/issues/74
-  # geom_vline(
-  #   data = d_avg,
-  #   aes(xintercept=avg, color=gvtp),
-  #   linetype="dashed") +
-  facet_trelliscope(
-    ~variable, scales = "free",
-    path = "index_libs/trelli_predictors")
-```
-
-## adehabitatHS
-
-habitat suitability
-
-### example 
-
-Example: This data set contains the map of 7 environmental variables in the Bauges Mountains (French Alps)
-
-```{r HS example, eval = F}
-library(adehabitatHS)
-data(bauges)
-names(bauges)
-
-map <- bauges$map
-mimage(map)
-
-image(map)
-locs <- bauges$locs
-points(locs, pch=3)
-
-cp <- count.points(locs, map)
-
-# tab: a data frame containing the value of the environmental variables in each pixel of the map
-tab <- slot(map, "data")
-names(tab)
-# pr: a vector containing the utilization weights associated to each pixel;
-pr  <- slot(cp, "data")[,1]
-
-histniche(tab, pr)
-
-# dudi.pca: performs a principal component analysis of the data frame passed as argument;
-pc <- dudi.pca(tab, scannf=FALSE)
-
-# General Niche-Environment System Factor Analysis (GNESFA). This framework is described in detail in Calenge and Basille (2008).
-
-# Reference = availability, Focus = utilization ----
-
-# gn <- gnesfa(pc, Focus = pr)
-#   Select the first number of axes (>=1): 1
-#   Select the second number of axes (>=0): 1
-gn <- gnesfa(pc, Focus = pr, nfFirst = 1, nfLast = 1, scannf=F)
-
-scatterniche(gn$li, pr, pts=TRUE)
-
-
-# Reference = utilization, Focus = availability ----
-# gn2 <- gnesfa(pc, Reference = pr)
-#   Select the first number of axes (>=1): 2
-#   Select the second number of axes (>=0): 0
-gn2 <- gnesfa(pc, Reference = pr, nfFirst = 2, nfLast = 0, scannf=F)
-
-# have a look at the niche of the chamois on the first factorial plane found by the analysis:
-scatterniche(gn2$li, pr)
-
-# have a look at the coefficients of the environmental variables in the definition of this axis
-s.arrow(gn2$co)
-
-# b/c variables are correlated on the study area (grass and fallen rocks occur at high elevation, whereas deciduous cover occurs at low elevation)
-# prefer to give a meaning to the axes of the GNESFA with the help of the correlations between the environmental variables and the axes of the GNESFA
-s.arrow(gn2$cor)
-
-
-# The GNESFA applied with the availability distribution as the focus is also named MADIFA (Mahalanobis Distances factor analysis, Calenge et al. 2008)
-mad <- madifa(pc, pr, scan=FALSE)
-
-plot(mad, map)
-# This figure presents:
-# - the eigenvalue diagram of the analysis;
-# - the coefficients of the variables in the definition of the axis;
-# - the plot of the niche on the factorial axes;
-# - the map of the Mahalanobis distances (see below);
-# - the map of the approximate Mahalanobis distances computed from the axes of the analysis;
-# - the correlation between the environmental variables and the axes of the analysis;
-
-# by default, the MADIFA is carried out with equal availability weights
-# However, unequal availability weights can also be defined with this function
-# pc <- dudi.pca(tab, row.w = av.w, scannf=FALSE) # av.w missing
-
-# map of these Mahalanobis distances
-MD <- mahasuhab(map, locs)
-image(MD)
-
-# skip some
-
-en1 <- enfa(pc, pr, scan=FALSE)
-gn3 <- gnesfa(pc, Reference=pr, scan=FALSE, centering="twice")
-
-# The eigenvalues diagram is presented below:
-barplot(en1$s)
-
-# Basille et al. (2008) showed that a biplot (Gabriel, 1971) can be used to show both the variables and the RU scores on the plane formed by the marginality vector (X direction) and any specialization axis (Y direction). This biplot can be drawn by:
-scatter(en1)
-
-
-# the marginality axis. The results of the ENFA are therefore consistent with the results returned by the MADIFA. Indeed the marginality axis is strongly correlated with the first axis of the MADIFA:
-plot(mad$li[,1], en1$li[,1], xlab="First axis of the MADIFA", ylab="Marginality axis")
-
-# dudi.acm: performs a multiple correspondence analysis of the data frame passed as argument (Tenenhaus and Young, 1985);
-
-# dudi.hillsmith: performs a Hill-Smith analysis of the data frame passed as argument (Hill and Smith, 1976);
-
-```
-
-### gvtp
-
-```{r HS gvtp, eval = F}
-library(adehabitatHS)
-
-pred_lm_p05_csv <- here("data/pred_lm_p05.csv")
-
-pred_lm_p05 <- read_csv(pred_lm_p05_csv)
-
-resp <- "g_cnt"
-
-preds <- pred_lm_p05 %>% 
-  filter(resp == !!resp) %>% 
-  distinct(pred) %>% 
-  pull(pred)
-
-
-
-fnames <- list.files(path=paste(system.file(package="dismo"), '/ex', sep=''), 
-              pattern='grd', full.names=TRUE )
-predictors <- stack(fnames)
-#plot(predictors)
-
-# file with presence points
-occurence <- paste(system.file(package="dismo"), '/ex/bradypus.csv', sep='')
-occ <- read.table(occurence, header=TRUE, sep=',')[,-1]
-
-# witholding a 20% sample for testing 
-fold <- kfold(occ, k=5)
-occtest <- occ[fold == 1, ]
-occtrain <- occ[fold != 1, ]
-
-# fit model, biome is a categorical variable
-me <- maxent(predictors, occtrain, factors='biome')
-
-# see the maxent results in a browser:
-# me
-
-# use "args"
-# me2 <- maxent(predictors, occtrain, factors='biome', args=c("-J", "-P"))
-
-# plot showing importance of each variable
-plot(me)
-
-# response curves
-response(me)
-
-# predict to entire dataset
-r <- predict(me, predictors) 
-
-# with some options:
-# r <- predict(me, predictors, args=c("outputformat=raw"), progress='text', 
-#      filename='maxent_prediction.grd')
-
-plot(r)
-points(occ)
-
-#testing
-# background data
-bg <- randomPoints(predictors, 1000)
-
-#simplest way to use 'evaluate'
-e1 <- evaluate(me, p=occtest, a=bg, x=predictors)
-
-# alternative 1
-# extract values
-pvtest <- data.frame(raster::extract(predictors, occtest))
-avtest <- data.frame(raster::extract(predictors, bg))
-
-e2 <- evaluate(me, p=pvtest, a=avtest)
-
-# alternative 2 
-# predict to testing points 
-testp <- predict(me, pvtest) 
-head(testp)
-testa <- predict(me, avtest) 
-
-e3 <- evaluate(p=testp, a=testa)
-e3
-threshold(e3)
-
-plot(e3, 'ROC')
-
-
-pr  <- select(d_all, all_of(resp)) %>% pull(1)
-tab <- select(d_all, all_of(preds)) %>% as.data.frame()
-
-histniche(tab, pr)
-
-# dudi.pca: performs a principal component analysis of the data frame passed as argument;
-pc <- dudi.pca(tab, scannf=FALSE)
-
-# General Niche-Environment System Factor Analysis (GNESFA). This framework is described in detail in Calenge and Basille (2008).
-
-# Reference = availability, Focus = utilization ----
-
-# gn <- gnesfa(pc, Focus = pr)
-#   Select the first number of axes (>=1): 1
-#   Select the second number of axes (>=0): 1
-gn <- gnesfa(pc, Focus = pr, nfFirst = 1, nfLast = 1, scannf=F)
-
-scatterniche(gn$li, pr, pts=TRUE)
-
-
-# Reference = utilization, Focus = availability ----
-# gn2 <- gnesfa(pc, Reference = pr)
-#   Select the first number of axes (>=1): 2
-#   Select the second number of axes (>=0): 0
-gn2 <- gnesfa(pc, Reference = pr, nfFirst = 2, nfLast = 0, scannf=F)
-
-# have a look at the niche of the chamois on the first factorial plane found by the analysis:
-scatterniche(gn2$li, pr)
-s.arrow(gn2$co, add.plot = T)
-
-# have a look at the coefficients of the environmental variables in the definition of this axis
-s.arrow(gn2$co)
-
-# b/c variables are correlated on the study area (grass and fallen rocks occur at high elevation, whereas deciduous cover occurs at low elevation)
-# prefer to give a meaning to the axes of the GNESFA with the help of the correlations between the environmental variables and the axes of the GNESFA
-s.arrow(gn2$cor)
-
-
-# The GNESFA applied with the availability distribution as the focus is also named MADIFA (Mahalanobis Distances factor analysis, Calenge et al. 2008)
-mad <- madifa(pc, pr, scan=FALSE)
-
-plot(mad, map)
-# This figure presents:
-# - the eigenvalue diagram of the analysis;
-# - the coefficients of the variables in the definition of the axis;
-# - the plot of the niche on the factorial axes;
-# - the map of the Mahalanobis distances (see below);
-# - the map of the approximate Mahalanobis distances computed from the axes of the analysis;
-# - the correlation between the environmental variables and the axes of the analysis;
-
-# by default, the MADIFA is carried out with equal availability weights
-# However, unequal availability weights can also be defined with this function
-# pc <- dudi.pca(tab, row.w = av.w, scannf=FALSE) # av.w missing
-
-# map of these Mahalanobis distances
-MD <- mahasuhab(map, locs)
-image(MD)
-
-# skip some
-
-en1 <- enfa(pc, pr, scan=FALSE)
-gn3 <- gnesfa(pc, Reference=pr, scan=FALSE, centering="twice")
-
-# The eigenvalues diagram is presented below:
-barplot(en1$s)
-
-# Basille et al. (2008) showed that a biplot (Gabriel, 1971) can be used to show both the variables and the RU scores on the plane formed by the marginality vector (X direction) and any specialization axis (Y direction). This biplot can be drawn by:
-scatter(en1)
-
-
-# the marginality axis. The results of the ENFA are therefore consistent with the results returned by the MADIFA. Indeed the marginality axis is strongly correlated with the first axis of the MADIFA:
-plot(mad$li[,1], en1$li[,1], xlab="First axis of the MADIFA", ylab="Marginality axis")
-
-# dudi.acm: performs a multiple correspondence analysis of the data frame passed as argument (Tenenhaus and Young, 1985);
-
-# dudi.hillsmith: performs a Hill-Smith analysis of the data frame passed as argument (Hill and Smith, 1976);
-
-```
-
-### Correlation among predictors
-
-* [Introduction to SDMs: data preparation and simple model fitting](https://damariszurell.github.io/HU-GCIB/3_SDM_intro.html)
-
-```{r}
-# We first estimate a correlation matrix from the predictors. We use Spearman rank correlation coefficient, as we do not know whether all variables are normally distributed.
-cor_mat <- cor(d[,-1], method='spearman')
-
-# We can visualise this correlation matrix. For better visibility, we plot the correlation coefficients as percentages.
-corrplot.mixed(cor_mat, tl.pos='lt', tl.cex=0.5, number.cex=0.4, addCoefasPercent=T)
-```
-
-### Species
-
-#### Native vs non-native
-
-```{r}
-ggplot(plot, aes(x=pct_native, fill=gvtp, color=gvtp)) +
-  geom_density(alpha=0.2) +
-  geom_histogram(
-    aes(y=..density..), position="identity", alpha=0.5) 
-  # geom_vline(
-  #   data = d_avg,
-  #   aes(xintercept=avg, color=gvtp),
-    # linetype="dashed")
-```
-
-
-## SDM
-
-Species distribution modeling...
-
-### Maxent
-
-```{r}
-d_long <- d %>% 
-  pivot_longer(-g_pres, "variable") %>%
-  #filter(variable %in% (unique(.$variable) %>% head(5))) %>% 
-  mutate(
-    g_pres = as.factor(g_pres)) %>% 
-  arrange(variable, g_pres, value)
-  
-d_gvtp_avg <- d_long %>% 
-  group_by(variable, gvtp) %>% 
-  summarize(
-    avg     = mean(value, na.rm=T), 
-    sd      = sd(value, na.rm=T),
-    .groups="drop")
-
-d_gvtp_ttest <- d_long %>% 
-  #filter(variable %in% (unique(.$variable) %>% head(5))) %>% 
-  group_by(variable) %>% 
-  summarize(
-    t_test = oneway.test(value ~ gvtp, var.equal = T)$p.value) %>% 
-  arrange(t_test) #  View(d_gvtp_ttest)
-datatable(d_gvtp_ttest)
-```
-
-
-* [Maxent -- Modeling methods | R Spatial](https://rspatial.org/raster/sdm/6_sdm_methods.html#maxent)
-
-```{r}
-# downloaded http://www.cs.princeton.edu/~schapire/maxent
-#   and placed into system.file("java", package="dismo")
-# maxent() # MaxEnt version 3.4.3 
-
-predictors_ttest <- d_gvtp_ttest %>% 
-  filter(t_test < 0.05) %>% 
-  pull(variable)
-
-d_a <- d %>% 
-  select(gvtp, all_of(predictors_ttest))
-
-set.seed(42)
-i_k       <- kfold(d_a, 5)
-d_a_train <- d_a[i_k != 1, ]
-d_a_test  <- d_a[i_k == 1, ]
-
-table(d_a_train$gvtp)
-table(d_a_test$gvtp)
-
-mx_a <- maxent(
-  x = d_a_train %>% select(-gvtp), 
-  p = d_a_train %>% select(gvtp))
-plot(mx_a)
-
-response(mx_a, var = c("cppr", "hr__", "zinc", "mcos"))
-
-e <- evaluate(
-  p = d_a_test %>% filter(gvtp == 1), 
-  a = d_a_test %>% filter(gvtp == 0), 
-  mx_a)
-e
-```
-
-### Random Forest
-
-```{r}
-rf_a <- randomForest(gvtp ~ ., d_a_train)
-
-e <- evaluate(
-  p = d_a_test %>% filter(gvtp == 1), 
-  a = d_a_test %>% filter(gvtp == 0), 
-  rf_a)
-e
-```
-
-### GAM
-
-```{r}
-gam_a <- gam(
-  gvtp ~ s(cppr, k=5) + s(hr__, k=5) + s(zinc, k=5), 
-  data = d_a_train, 
-  family = binomial(link = "logit"))
-summary(gam_a)
-
-plot(gam_a, select=1)
-plot(gam_a, select=2)
-plot(gam_a, select=3)
-
-vis.gam(gam_a,ticktype="detailed",color="heat",theta=-35)  
-vis.gam(gam_a,se=2,theta=-35)
-
-e <- evaluate(
-  p = d_a_test %>% filter(gvtp == 1), 
-  a = d_a_test %>% filter(gvtp == 0), 
-  gam_a)
-e
-```
-
-```{r, eval=F}
-knitr::opts_chunk$set(eval = F)
-```
-
-### Fit models
-
-* [sdm](http://www.biogeoinformatics.org/)
-
-```{r}
-d_sdm <- sdmData(gvtp ~ ., train = as.data.frame(d))
-d_sdm
-
-m1 <- sdm(
-  gvtp ~ ., data = d_sdm, 
-  methods = c("glm", "gam", "brt"))
-m1
-
-m2 <- sdm(
-  gvtp ~ .,data = d_sdm,
-  methods = c("rf", "tree", "fda", "mars", "svm"),
-  replication = "sub", test.percent = 30, n = 2)
-
-m2
-getModelInfo(m2)
-
-roc(m2)
-
-roc(m2,smooth=T)
-```
-
-### Importance of predictors
-
-```{r}
-# gui(m2)
-
-vi <- getVarImp(m2, id = 1, wtest = "training")
-
-plot(vi,'cor')
-
-vi@varImportance %>% 
-  arrange(desc(corTest)) %>% 
-  datatable()
-```
-
-
-## Next Steps
-
-- subset of variables based on 1 per group in [gvtp_hab_char_columns.xlsx - Google Sheets](https://docs.google.com/spreadsheets/d/1LUjoRMollGuouUyfQeoAPbYC6Hl6i7kT/edit#gid=1414489956)
-- want term plots:
-  - gam
-  - [R: Maxent](http://finzi.psych.upenn.edu/R/library/dismo/html/maxent.html)
-- [Species distribution modeling — R Spatial](https://rspatial.org/raster/sdm/index.html)
-- [6 Available Models | The caret Package](http://topepo.github.io/caret/available-models.html)
-- [Lab 6. Species](http://benbestphd.com/landscape-ecology-labs/lab6.html)
-
-## Notes
-
-### Circular stats
-
-- [@kvasnesQuantifyingSuitableLate2018]:
-  
-  > Aspect is a circular variable (0°— north to 360°— north) and was therefore transformed to radians ($r_{aspect} = aspect ∗ (2π/360)$), and in the next step we created two variables representing north-exposure ($N_{aspect} =cos(r_{aspect})$) and eastern exposure ($E_{aspect} = sin(r_{aspect})$) [6]. We also constructed a categorical variable with five levels representing aspect, north (315°–45°), east (45°–135°), south (135°–225°), west (225°–315°) and flat areas (0°).
-  
-- [@kvasnesQuantifyingSuitableLate2018] ([6] reference from above):
-
-  > Given that aspect is a circular variable (0°– 360°), it was converted to sine and cosine values, decomposing them into a north–south and an east– west component {‘north exposure’ = [cos(aspect in radians)] and ‘east exposure’ = [sin(aspect in radians)]}. Sine values ranged from -1 (due west) to 1 (due east), whereas cosine values ranged from -1 (due south) to 1 (due north). To facilitate interpretation, the estimated parameter values for the sine and cosine components of aspect were back-transformed and presented in degrees.
-
+Results may also be packaged in such a way that data could be entered in the future at each categorical stage and predictions run within a few simple R functions. These could also be easily folded into a Shiny application with a user interface for uploading the CSVs to run the predictions.
 
 ## References
 
-
-
-
-
-[Zotero group: dudek-gvtp](https://www.zotero.org/groups/2587262/dudek-gvtp/library)
 
